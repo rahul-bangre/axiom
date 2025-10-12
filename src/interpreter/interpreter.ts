@@ -1,5 +1,5 @@
 import * as AST from "@parser";
-import { Environment } from "./environment.ts";
+import { Environment } from "../runtime/environment.ts";
 import { RuntimeValue } from "@runtime";
 
 export class Interpreter {

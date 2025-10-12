@@ -1,2 +1,2 @@
-export * from "./environment.ts";
+export * from "../runtime/environment.ts";
 export * from "./interpreter.ts";
