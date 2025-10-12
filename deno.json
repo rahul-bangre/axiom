@@ -1,0 +1,21 @@
+{
+  "tasks": {
+    "start": "deno run --allow-read --allow-write src/main.ts",
+    "repl": "deno run --allow-read --allow-write src/repl/repl.ts",
+    "test": "deno test --allow-read",
+    "dev": "deno run --watch --allow-read --allow-write src/main.ts"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window"]
+  },
+  "fmt": {
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}
