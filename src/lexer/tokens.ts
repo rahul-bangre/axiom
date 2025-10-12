@@ -40,6 +40,7 @@ export enum TokenType {
   COLON,
   DOT,
   ARROW,
+  QUESTION,
 
   EOF,
 }

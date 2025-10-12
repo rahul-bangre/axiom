@@ -51,6 +51,9 @@ export function evaluate(node: AST.ASTNode, env: Environment): RuntimeValue {
     case AST.ASTNodeType.LAMBDA_EXPR:
       return evaluateLambda(node as AST.LambdaExpr, env);
 
+    case AST.ASTNodeType.TERNARY_EXPR:
+      return evaluateTernaryExpr(node as AST.TernaryExpr, env);
+
     case AST.ASTNodeType.IDENTIFIER:
       return evaluateIdentifier(node as AST.Identifier, env);
 
@@ -433,6 +436,16 @@ function evaluateLambda(node: AST.LambdaExpr, env: Environment): RuntimeValue {
   };
 
   return func;
+}
+
+function evaluateTernaryExpr(node: AST.TernaryExpr, env: Environment): RuntimeValue {
+  const condition = evaluate(node.condition, env);
+
+  if (isTruthy(condition)) {
+    return evaluate(node.true_expr, env);
+  }
+
+  return evaluate(node.false_expr, env);
 }
 
 function evaluateIfStatement(node: AST.IfStatement, env: Environment): RuntimeValue {

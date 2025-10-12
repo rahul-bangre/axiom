@@ -176,6 +176,8 @@ export class Tokenizer {
         return this.makeToken(TokenType.COLON, char);
       case ".":
         return this.makeToken(TokenType.DOT, char);
+      case "?":
+        return this.makeToken(TokenType.QUESTION, char);
       default:
         throw new LexerError(`Unexpected character '${char}'`, this.line, this.column);
     }

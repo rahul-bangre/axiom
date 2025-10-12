@@ -191,7 +191,7 @@ export class Parser {
 
       if (!this.check(TokenType.IDENTIFIER) && !this.check(TokenType.RPAREN)) {
         this.current = paren_pos;
-        return this.logicalOr();
+        return this.ternary();
       }
 
       const params: Array<{ name: string; type_annotation?: string }> = [];
@@ -200,7 +200,7 @@ export class Parser {
         do {
           if (!this.check(TokenType.IDENTIFIER)) {
             this.current = paren_pos;
-            return this.logicalOr();
+            return this.ternary();
           }
 
           const param_name = this.advance().value;
@@ -216,7 +216,7 @@ export class Parser {
 
       if (!this.check(TokenType.RPAREN)) {
         this.current = paren_pos;
-        return this.logicalOr();
+        return this.ternary();
       }
 
       this.advance();
@@ -233,7 +233,7 @@ export class Parser {
       this.current = paren_pos;
     }
 
-    return this.logicalOr();
+    return this.ternary();
   }
 
   private lambdaBody(
@@ -259,6 +259,25 @@ export class Parser {
       body: body_expr,
       is_expression_body: true,
     };
+  }
+
+  private ternary(): AST.Expression {
+    const condition = this.logicalOr();
+
+    if (this.match(TokenType.QUESTION)) {
+      const true_expr = this.ternary();
+      this.consume(TokenType.COLON, "Expected ':' after true expression in ternary");
+      const false_expr = this.ternary();
+
+      return {
+        type: AST.ASTNodeType.TERNARY_EXPR,
+        condition,
+        true_expr,
+        false_expr,
+      };
+    }
+
+    return condition;
   }
 
   private logicalOr(): AST.Expression {

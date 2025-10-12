@@ -310,6 +310,38 @@ Deno.test("Parser - Complex program", () => {
   assertEquals(ast.body.body[1].type, ASTNodeType.CONST_DECLARATION);
 });
 
+Deno.test("Parser - Ternary expression - basic", () => {
+  const ast = parse("x > 0 ? 1 : -1");
+
+  const expr_stmt = ast.body.body[0] as any;
+  assertEquals(expr_stmt.expression.type, ASTNodeType.TERNARY_EXPR);
+  assertEquals(expr_stmt.expression.condition.type, ASTNodeType.BINARY_EXPR);
+  assertEquals(expr_stmt.expression.true_expr.type, ASTNodeType.NUMBER_LITERAL);
+  assertEquals(expr_stmt.expression.true_expr.value, 1);
+  assertEquals(expr_stmt.expression.false_expr.type, ASTNodeType.UNARY_EXPR);
+});
+
+Deno.test("Parser - Ternary expression - nested", () => {
+  const ast = parse("x > 0 ? 1 : y > 0 ? 2 : 3");
+
+  const expr_stmt = ast.body.body[0] as any;
+  assertEquals(expr_stmt.expression.type, ASTNodeType.TERNARY_EXPR);
+  assertEquals(expr_stmt.expression.true_expr.value, 1);
+  assertEquals(expr_stmt.expression.false_expr.type, ASTNodeType.TERNARY_EXPR);
+  assertEquals(expr_stmt.expression.false_expr.true_expr.value, 2);
+  assertEquals(expr_stmt.expression.false_expr.false_expr.value, 3);
+});
+
+Deno.test("Parser - Ternary expression - with function call", () => {
+  const ast = parse("isValid() ? doThis() : doThat()");
+
+  const expr_stmt = ast.body.body[0] as any;
+  assertEquals(expr_stmt.expression.type, ASTNodeType.TERNARY_EXPR);
+  assertEquals(expr_stmt.expression.condition.type, ASTNodeType.CALL_EXPR);
+  assertEquals(expr_stmt.expression.true_expr.type, ASTNodeType.CALL_EXPR);
+  assertEquals(expr_stmt.expression.false_expr.type, ASTNodeType.CALL_EXPR);
+});
+
 Deno.test("Parser - ParserError for unexpected token", () => {
   assertThrows(
     () => {

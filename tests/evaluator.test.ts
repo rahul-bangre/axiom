@@ -356,3 +356,38 @@ Deno.test("Evaluator - Truthiness", () => {
   assertEquals(run('fn test() { if ("hello") { return 1 } return 0 } test()').value, 1);
   assertEquals(run("fn test() { if (null) { return 1 } return 0 } test()").value, 0);
 });
+
+Deno.test("Evaluator - Ternary expression - basic", () => {
+  assertEquals(run("5 > 3 ? 100 : 200").value, 100);
+  assertEquals(run("2 > 5 ? 100 : 200").value, 200);
+});
+
+Deno.test("Evaluator - Ternary expression - with variables", () => {
+  assertEquals(run("x = 10\nx > 5 ? x * 2 : x / 2").value, 20);
+  assertEquals(run("x = 3\nx > 5 ? x * 2 : x / 2").value, 1.5);
+});
+
+Deno.test("Evaluator - Ternary expression - nested", () => {
+  assertEquals(run("x = 15\nx > 10 ? 1 : x > 5 ? 2 : 3").value, 1);
+  assertEquals(run("x = 7\nx > 10 ? 1 : x > 5 ? 2 : 3").value, 2);
+  assertEquals(run("x = 3\nx > 10 ? 1 : x > 5 ? 2 : 3").value, 3);
+});
+
+Deno.test("Evaluator - Ternary expression - with strings", () => {
+  assertEquals(run('age = 18\nage >= 18 ? "adult" : "minor"').value, "adult");
+  assertEquals(run('age = 15\nage >= 18 ? "adult" : "minor"').value, "minor");
+});
+
+Deno.test("Evaluator - Ternary expression - with function calls", () => {
+  assertEquals(run("fn double(x) { return x * 2 }\ntrue ? double(5) : double(10)").value, 10);
+  assertEquals(run("fn double(x) { return x * 2 }\nfalse ? double(5) : double(10)").value, 20);
+});
+
+Deno.test("Evaluator - Ternary expression - short-circuit evaluation", () => {
+  const result = run(`
+    fn error() { return 1 / 0 }
+    fn safe() { return 42 }
+    true ? safe() : error()
+  `);
+  assertEquals(result.value, 42);
+});
