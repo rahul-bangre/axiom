@@ -134,6 +134,18 @@ export function createArrayMethods(
       }
       return { type: ValueType.NULL } as NullValue;
     },
+    findIndex: (arr, fn) => {
+      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
+        throw new TypeError(`findIndex() requires a function, got ${fn.type}`);
+      }
+      for (let i = 0; i < arr.elements.length; i++) {
+        const result = callFunction(fn, [arr.elements[i]]);
+        if (isTruthy(result)) {
+          return { type: ValueType.NUMBER, value: i } as NumberValue;
+        }
+      }
+      return { type: ValueType.NUMBER, value: -1 } as NumberValue;
+    },
     some: (arr, fn) => {
       if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
         throw new TypeError(`some() requires a function, got ${fn.type}`);

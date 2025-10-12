@@ -5,15 +5,12 @@ fn twoSum(nums, target) {
     if (i == len(nums)) { return null }
     
     needed = target - nums[i]
+    rest = nums.slice(i + 1, len(nums))
+    j = rest.findIndex(x => x == needed)
     
-    fn findInRest(j) {
-      if (j == len(nums)) { return null }
-      if (nums[j] == needed) { return [i, j] }
-      return findInRest(j + 1)
+    if (j != -1) {
+      return [i, i + 1 + j]
     }
-    
-    result = findInRest(i + 1)
-    if (result != null) { return result }
     
     return checkFrom(i + 1)
   }

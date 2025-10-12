@@ -210,6 +210,22 @@ Deno.test("Array - find returns null if not found", () => {
   assertEquals(result.type, 3);
 });
 
+Deno.test("Array - findIndex returns index of first match", () => {
+  const result = run(`
+    fn greater_than_three(x) { return x > 3 }
+    [1, 2, 3, 4, 5].findIndex(greater_than_three)
+  `);
+  assertEquals(result.value, 3);
+});
+
+Deno.test("Array - findIndex returns -1 if not found", () => {
+  const result = run(`
+    fn greater_than_ten(x) { return x > 10 }
+    [1, 2, 3].findIndex(greater_than_ten)
+  `);
+  assertEquals(result.value, -1);
+});
+
 Deno.test("Array - some returns true if any match", () => {
   const result = run(`
     fn greater_than_three(x) { return x > 3 }
