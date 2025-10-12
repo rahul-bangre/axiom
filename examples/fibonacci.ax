@@ -1,4 +1,4 @@
-fn fibonacci(n: int): int {
+fn fibonacci(n) {
   if (n <= 1) {
     return n
   }
@@ -6,34 +6,14 @@ fn fibonacci(n: int): int {
 }
 
 print("Fibonacci sequence:")
-i = 0
-if (i < 10) {
-  print("fib(", i, ") =", fibonacci(i))
-  i = i + 1
-}
-
-fn fibonacciIterative(n: int): int {
-  if (n <= 1) {
-    return n
-  }
-  
-  a = 0
-  b = 1
-  i = 2
-  
-  if (i <= n) {
-    temp = a + b
-    a = b
-    b = temp
-    i = i + 1
-  }
-  
-  return b
-}
-
-print("Fibonacci (iterative):")
-j = 0
-if (j < 15) {
-  print("fib(", j, ") =", fibonacciIterative(j))
-  j = j + 1
-}
+print("fib(0) =", fibonacci(0))
+print("fib(1) =", fibonacci(1))
+print("fib(2) =", fibonacci(2))
+print("fib(3) =", fibonacci(3))
+print("fib(4) =", fibonacci(4))
+print("fib(5) =", fibonacci(5))
+print("fib(6) =", fibonacci(6))
+print("fib(7) =", fibonacci(7))
+print("fib(8) =", fibonacci(8))
+print("fib(9) =", fibonacci(9))
+print("fib(10) =", fibonacci(10))

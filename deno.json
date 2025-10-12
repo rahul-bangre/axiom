@@ -1,9 +1,10 @@
 {
   "tasks": {
-    "start": "deno run --allow-read --allow-write src/main.ts",
+    "start": "deno run --allow-read src/cli.ts",
+    "run": "deno run --allow-read src/cli.ts",
     "repl": "deno run --allow-read --allow-write src/repl/repl.ts",
     "test": "deno test --allow-read",
-    "dev": "deno run --watch --allow-read --allow-write src/main.ts"
+    "dev": "deno run --watch --allow-read src/cli.ts"
   },
   "imports": {
     "@lexer": "./src/lexer/mod.ts",

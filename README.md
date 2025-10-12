@@ -1,165 +1,141 @@
-# Axiom Programming Language
+# Axiom
 
 A minimal, typed, functional language built on immutable truth.
 
+## Features
+
+- 🔒 **Immutable by default** - all bindings are constants
+- 🎯 **Functional-first** - functions, closures, recursion
+- 📝 **Type annotations** - optional static typing
+- ⚡ **Clean syntax** - no semicolons, minimal keywords
+- 🚀 **Fast execution** - built with Deno + TypeScript
+
 ## Philosophy
 
-- **Minimal and elegant syntax** — avoids unnecessary keywords and symbols
-- **Functional-first, immutable by default** — no reassignment of variables
-- **Strong, static typing with type inference**
-- **Explicit returns required in functions**
-- **No `else` keyword** — prefer early returns or ternaries
-- **Purely expression-based where possible**
-- **All lowercase identifiers**
-- **Variables and types use `snake_case`**
-- **Functions use `camelCase`**
+- Minimal and elegant syntax
+- Purely expression-based where possible
+- All lowercase identifiers (snake_case for variables, camelCase for functions)
+- No reassignment, no `else` keyword, no loops
+- Explicit returns required in functions
 
 ## Installation
 
-Make sure you have [Deno](https://deno.land/) installed on your system.
+### Run locally
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd axiom
-
-# Run the REPL
-make repl
-
-# Run a file
-make run ARGS=examples/hello-world.ax
-
-# Run tests
-make test
-
-# Type check
-make check
+deno task run examples/hello-world.ax
 ```
 
-## Language Syntax
+### Install globally
 
-### Variables
-
-Variables are immutable by default (no reassignment):
-
-```axiom
-x = 42
-pi = 3.14159
-name = "axiom"
-
-user_age: int = 25
+```bash
+deno install -Agf --name=axiom src/cli.ts
 ```
 
-### Functions
+Then use anywhere:
 
-Functions use `fn` keyword and `camelCase` naming:
-
-```axiom
-fn add(a: int, b: int): int {
-  return a + b
-}
-
-result = add(5, 3)
-print(result)
+```bash
+axiom examples/fibonacci.ax
 ```
 
-### Control Flow
-
-Only `if` statements are supported (no `else` — use early returns):
+## Quick Start
 
 ```axiom
-fn checkNumber(n: int): string {
-  if (n < 0) {
-    return "negative"
-  }
-  if (n == 0) {
-    return "zero"
-  }
-  return "positive"
-}
-```
-
-### Arrays
-
-```axiom
-numbers = [1, 2, 3, 4, 5]
-first = numbers[0]
-```
-
-### Objects
-
-```axiom
-user = {name: "rahul", age: 21}
-user_name = user.name
-```
-
-### Operators
-
-**Arithmetic**: `+`, `-`, `*`, `/`, `%`
-
-**Comparison**: `==`, `!=`, `<`, `>`, `<=`, `>=`
-
-**Logical**: `&&`, `||`, `!`
-
-## Built-in Functions
-
-### I/O Functions
-
-- `print(...args)` - Print values to console
-
-### Math Functions
-
-- `abs(n)` - Absolute value
-- `sqrt(n)` - Square root
-- `pow(base, exp)` - Power
-- `floor(n)` - Floor
-- `ceil(n)` - Ceiling
-- `round(n)` - Round
-- `min(...args)` - Minimum value
-- `max(...args)` - Maximum value
-- `random()` - Random number [0, 1)
-
-### Array Functions
-
-- `len(arr)` - Get length of array or string
-- `push(arr, val)` - Add element to array
-- `pop(arr)` - Remove last element
-- `first(arr)` - Get first element
-- `last(arr)` - Get last element
-
-## Examples
-
-### Hello World
-
-```axiom
+// hello-world.ax
 print("Hello, World!")
+
+name = "Axiom"
+print("Welcome to", name)
 ```
 
-### Factorial
-
 ```axiom
-fn factorial(n: int): int {
+// functions with recursion
+fn factorial(n) {
   if (n <= 1) {
     return 1
   }
   return n * factorial(n - 1)
 }
 
-print("Factorial of 5:", factorial(5))
+print("5! =", factorial(5))
 ```
 
-### Fibonacci
-
 ```axiom
-fn fibonacci(n: int): int {
-  if (n <= 1) {
-    return n
-  }
-  return fibonacci(n - 1) + fibonacci(n - 2)
+// closures
+outer = 10
+
+fn addOuter(x) {
+  return x + outer
 }
 
-i = 0
-print("fib(", i, ") =", fibonacci(i))
+print(addOuter(5))  // 15
+```
+
+## Syntax
+
+### Variables (immutable)
+
+```axiom
+x = 42
+name: string = "rahul"
+is_active = true
+```
+
+### Functions
+
+```axiom
+fn add(a, b) {
+  return a + b
+}
+
+fn greet(name: string): string {
+  return "Hello, " + name
+}
+```
+
+### Control Flow
+
+```axiom
+fn absolute(n) {
+  if (n < 0) {
+    return -n
+  }
+  return n
+}
+```
+
+### Collections
+
+```axiom
+// arrays
+numbers = [1, 2, 3, 4, 5]
+first = numbers[0]
+count = len(numbers)
+
+// objects
+user = {name: "rahul", age: 21}
+username = user.name
+```
+
+## Built-in Functions
+
+- `print(...values)` - print values to stdout
+- `len(array | string)` - get length
+
+## Development
+
+```bash
+# run tests
+make test
+
+# type check
+make check
+
+# format code
+make format
+
+# run a file
+deno task run examples/hello-world.ax
 ```
 
 ## Project Structure
@@ -167,67 +143,25 @@ print("fib(", i, ") =", fibonacci(i))
 ```
 axiom/
 ├── src/
-│   ├── lexer/          # Tokenization
+│   ├── lexer/          # tokenization
 │   ├── parser/         # AST generation
-│   ├── interpreter/    # Code execution
-│   ├── types/          # Type system
-│   ├── runtime/        # Runtime values
-│   ├── std/            # Standard library
-│   ├── repl/           # Interactive REPL
-│   └── main.ts         # CLI entry point
-├── tests/              # Test suite
-├── examples/           # Example programs
-├── Makefile            # Build commands
-└── deno.json           # Deno configuration
+│   ├── runtime/        # evaluation & environment
+│   ├── std/            # standard library
+│   ├── types/          # type checker
+│   └── cli.ts          # CLI entrypoint
+├── tests/              # test suites
+├── examples/           # example programs
+└── deno.json           # deno configuration
 ```
 
-## Development
+## Examples
 
-```bash
-# Run tests
-make test
+See the `examples/` directory for more:
 
-# Type check
-make check
-
-# Format code
-make format
-
-# Run REPL
-make repl
-
-# Run a file
-make run ARGS=examples/hello-world.ax
-```
-
-## Makefile Commands
-
-- `make check` - Type check all TypeScript files
-- `make test` - Run test suite
-- `make format` - Format code with deno fmt
-- `make run ARGS=<file>` - Run an Axiom file
-- `make repl` - Start interactive REPL
-- `make clean` - Clean temporary files
+- `hello-world.ax` - basic syntax
+- `fibonacci.ax` - recursive fibonacci
+- `factorial.ax` - recursive factorial
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues and pull requests.
-
-## Roadmap
-
-- [x] Basic lexer and parser
-- [x] Variable declarations (immutable)
-- [x] Function declarations
-- [x] If statements (no else)
-- [x] Type annotations
-- [x] Arrays and objects
-- [ ] Lambda functions
-- [ ] Type checking
-- [ ] Standard library expansion
-- [ ] Module system
-- [ ] Pattern matching
-- [ ] Compilation to bytecode
+MIT
