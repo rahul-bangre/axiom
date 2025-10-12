@@ -1,0 +1,6 @@
+fn function() {
+    userId = "rahul"
+    return userId
+}
+
+print(function())

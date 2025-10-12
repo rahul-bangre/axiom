@@ -1,4 +1,5 @@
 import * as AST from "@parser";
+import { checkParameterTypes, checkReturnType, checkType } from "@types";
 import { Environment } from "./environment.ts";
 import { RuntimeError, TypeError } from "./errors.ts";
 import {
@@ -138,7 +139,17 @@ function evaluateArithmetic(
   left: RuntimeValue,
   right: RuntimeValue,
   operator: string,
-): NumberValue {
+): RuntimeValue {
+  if (operator === "+" && (left.type === ValueType.STRING || right.type === ValueType.STRING)) {
+    const left_str = left.type === ValueType.STRING
+      ? (left as StringValue).value
+      : String((left as NumberValue).value);
+    const right_str = right.type === ValueType.STRING
+      ? (right as StringValue).value
+      : String((right as NumberValue).value);
+    return { type: ValueType.STRING, value: left_str + right_str } as StringValue;
+  }
+
   if (left.type !== ValueType.NUMBER || right.type !== ValueType.NUMBER) {
     throw new TypeError(`Arithmetic operators require numbers, got ${left.type} and ${right.type}`);
   }
@@ -148,16 +159,16 @@ function evaluateArithmetic(
 
   switch (operator) {
     case "+":
-      return { type: ValueType.NUMBER, value: left_val + right_val };
+      return { type: ValueType.NUMBER, value: left_val + right_val } as NumberValue;
     case "-":
-      return { type: ValueType.NUMBER, value: left_val - right_val };
+      return { type: ValueType.NUMBER, value: left_val - right_val } as NumberValue;
     case "*":
-      return { type: ValueType.NUMBER, value: left_val * right_val };
+      return { type: ValueType.NUMBER, value: left_val * right_val } as NumberValue;
     case "/":
       if (right_val === 0) throw new RuntimeError("Division by zero");
-      return { type: ValueType.NUMBER, value: left_val / right_val };
+      return { type: ValueType.NUMBER, value: left_val / right_val } as NumberValue;
     case "%":
-      return { type: ValueType.NUMBER, value: left_val % right_val };
+      return { type: ValueType.NUMBER, value: left_val % right_val } as NumberValue;
     default:
       throw new RuntimeError(`Unknown arithmetic operator: ${operator}`);
   }
@@ -284,6 +295,8 @@ function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
     );
   }
 
+  checkParameterTypes(args, func.param_info, func.name);
+
   const func_env = func.closure.extend();
 
   for (let i = 0; i < func.params.length; i++) {
@@ -293,7 +306,17 @@ function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
   const result = evaluateBlockStatement(func.body, func_env);
 
   if ((result as any).isReturn) {
-    return (result as any).returnValue || { type: ValueType.NULL };
+    const return_value = (result as any).returnValue || { type: ValueType.NULL };
+
+    // if function has typed parameters but no return type, infer as void
+    const has_typed_params = func.param_info.some((p) => p.type_annotation !== undefined);
+    const inferred_return_type = func.return_type || (has_typed_params ? "void" : undefined);
+
+    if (inferred_return_type) {
+      checkReturnType(return_value, inferred_return_type, func.name);
+    }
+
+    return return_value;
   }
 
   return result;
@@ -338,6 +361,11 @@ function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): RuntimeValu
 
 function evaluateConstDeclaration(node: AST.ConstDeclaration, env: Environment): RuntimeValue {
   const value = evaluate(node.value, env);
+
+  if (node.type_annotation) {
+    checkType(value, node.type_annotation, `variable '${node.identifier}'`);
+  }
+
   return env.define(node.identifier, value);
 }
 
@@ -346,6 +374,8 @@ function evaluateFuncDeclaration(node: AST.FuncDeclaration, env: Environment): R
     type: ValueType.FUNCTION,
     name: node.name,
     params: node.params.map((p) => p.name),
+    param_info: node.params,
+    return_type: node.return_type,
     body: node.body,
     closure: env,
   };

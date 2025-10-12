@@ -49,6 +49,8 @@ export interface FunctionValue extends RuntimeValue {
   type: ValueType.FUNCTION;
   name: string;
   params: string[];
+  param_info: Array<{ name: string; type_annotation?: string }>;
+  return_type?: string;
   body: BlockStatement;
   closure: Environment;
 }

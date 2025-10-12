@@ -320,9 +320,14 @@ Deno.test("Evaluator - Complex program", () => {
   assertEquals(result.value, 13);
 });
 
+Deno.test("Evaluator - String concatenation with number", () => {
+  const result = run('"hello" + 5');
+  assertEquals(result.value, "hello5");
+});
+
 Deno.test("Evaluator - Type error - arithmetic on non-numbers", () => {
   assertThrows(
-    () => run('"hello" + 5'),
+    () => run('"hello" - 5'),
     TypeError,
     "Arithmetic operators require numbers",
   );

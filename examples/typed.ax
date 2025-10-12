@@ -1,0 +1,50 @@
+// type system demonstration
+
+print("=== Axiom Type System Demo ===")
+print()
+
+// typed variables
+age: int = 21
+name: string = "rahul"
+pi: float = 3.14159
+is_active: bool = true
+
+print("Typed variables:")
+print("age (int):", age)
+print("name (string):", name)
+print("pi (float):", pi)
+print("is_active (bool):", is_active)
+print()
+
+// typed function with return type
+fn add(a: int, b: int): int {
+  return a + b
+}
+
+result: int = add(10, 32)
+print("add(10, 32):", result)
+print()
+
+// float accepts int
+speed: float = 100
+print("speed (float = int):", speed)
+print()
+
+// mixed typed and untyped
+x = 5  // inferred
+y: int = 10  // explicit
+sum = x + y
+print("mixed:", sum)
+print()
+
+// function with type checking
+fn greet(name: string): string {
+  return "Hello, " + name
+}
+
+greeting = greet("Axiom")
+print(greeting)
+print()
+
+print("=== Type safety enforced! ===")
+
