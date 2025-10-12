@@ -1,4 +1,5 @@
 import * as AST from "@parser";
+import { createArrayMethods } from "@std";
 import { checkParameterTypes, checkReturnType, checkType } from "@types";
 import { Environment } from "./environment.ts";
 import { RuntimeError, TypeError } from "./errors.ts";
@@ -6,6 +7,7 @@ import {
   ArrayValue,
   BooleanValue,
   FunctionValue,
+  NativeFunctionValue,
   NullValue,
   NumberValue,
   ObjectValue,
@@ -257,34 +259,17 @@ function isTruthy(value: RuntimeValue): boolean {
   return true;
 }
 
-function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): RuntimeValue {
-  const operand = evaluate(node.operand, env);
-
-  if (node.operator === "-") {
-    if (operand.type !== ValueType.NUMBER) {
-      throw new TypeError(`Unary minus requires a number, got ${operand.type}`);
-    }
-    return { type: ValueType.NUMBER, value: -(operand as NumberValue).value } as NumberValue;
-  }
-
-  if (node.operator === "!") {
-    return { type: ValueType.BOOLEAN, value: !isTruthy(operand) } as BooleanValue;
-  }
-
-  throw new RuntimeError(`Unknown unary operator: ${node.operator}`);
-}
-
-function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
-  const callee = evaluate(node.callee, env);
-
+function callFunction(
+  callee: RuntimeValue,
+  args: RuntimeValue[],
+  env: Environment,
+): RuntimeValue {
   if (callee.type !== ValueType.FUNCTION && callee.type !== ValueType.NATIVE_FUNCTION) {
     throw new TypeError(`Cannot call non-function value of type ${callee.type}`);
   }
 
-  const args = node.args.map((arg) => evaluate(arg, env));
-
   if (callee.type === ValueType.NATIVE_FUNCTION) {
-    return (callee as any).call(args);
+    return (callee as NativeFunctionValue).call(args);
   }
 
   const func = callee as FunctionValue;
@@ -308,7 +293,6 @@ function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
   if ((result as any).isReturn) {
     const return_value = (result as any).returnValue || { type: ValueType.NULL };
 
-    // if function has typed parameters but no return type, infer as void
     const has_typed_params = func.param_info.some((p) => p.type_annotation !== undefined);
     const inferred_return_type = func.return_type || (has_typed_params ? "void" : undefined);
 
@@ -320,6 +304,29 @@ function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
   }
 
   return result;
+}
+
+function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): RuntimeValue {
+  const operand = evaluate(node.operand, env);
+
+  if (node.operator === "-") {
+    if (operand.type !== ValueType.NUMBER) {
+      throw new TypeError(`Unary minus requires a number, got ${operand.type}`);
+    }
+    return { type: ValueType.NUMBER, value: -(operand as NumberValue).value } as NumberValue;
+  }
+
+  if (node.operator === "!") {
+    return { type: ValueType.BOOLEAN, value: !isTruthy(operand) } as BooleanValue;
+  }
+
+  throw new RuntimeError(`Unknown unary operator: ${node.operator}`);
+}
+
+function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
+  const callee = evaluate(node.callee, env);
+  const args = node.args.map((arg) => evaluate(arg, env));
+  return callFunction(callee, args, env);
 }
 
 function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): RuntimeValue {
@@ -345,11 +352,29 @@ function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): RuntimeValu
     return array.elements[Math.floor(idx)];
   }
 
+  const property_name = (node.property as AST.Identifier).name;
+
+  if (object.type === ValueType.ARRAY) {
+    const array = object as ArrayValue;
+    const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
+      callFunction(callee, args, env);
+    const array_methods = createArrayMethods(call_fn_with_env, isTruthy);
+
+    if (property_name in array_methods) {
+      return {
+        type: ValueType.NATIVE_FUNCTION,
+        name: property_name,
+        call: (args: RuntimeValue[]) => array_methods[property_name](array, ...args),
+      } as NativeFunctionValue;
+    }
+
+    throw new RuntimeError(`Array has no method '${property_name}'`);
+  }
+
   if (object.type !== ValueType.OBJECT) {
     throw new TypeError(`Cannot access property on non-object type ${object.type}`);
   }
 
-  const property_name = (node.property as AST.Identifier).name;
   const obj = object as ObjectValue;
 
   if (!obj.properties.has(property_name)) {

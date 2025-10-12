@@ -67,6 +67,7 @@ const len: NativeFunctionValue = {
 export function createGlobalEnv(): Environment {
   const env = new Environment();
 
+  // core builtins
   env.define("print", print);
   env.define("len", len);
 

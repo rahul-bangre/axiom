@@ -1,6 +1,26 @@
-fn function() {
-    userId = "rahul"
-    return userId
-}
+// demonstrating immutable array operations
 
-print(function())
+// chain operations to build an array
+fruits = [].push("apple").push("banana").push("cherry")
+print("Built with chaining:", fruits)
+
+// more chaining
+result = [1, 2, 3].push(4).push(5).pop()
+print("Chained [1,2,3].push(4).push(5).pop():", result)
+
+// get first and last
+numbers = [10, 20, 30, 40]
+print("First:", numbers.first())
+print("Last:", numbers.last())
+
+// slice
+middle = numbers.slice(1, 3)
+print("Middle slice(1,3):", middle)
+
+// concat
+combined = [1, 2].concat([3, 4])
+print("Concatenated:", combined)
+
+// complex chaining
+final = [1, 2].push(3).concat([4, 5]).slice(1, 4)
+print("Complex chain:", final)

@@ -299,11 +299,31 @@ export class Parser {
   }
 
   private call(): AST.Expression {
-    let expr = this.member();
+    let expr = this.primary();
 
     while (true) {
       if (this.match(TokenType.LPAREN)) {
         expr = this.finishCall(expr);
+      } else if (this.match(TokenType.DOT)) {
+        const property: AST.Identifier = {
+          type: AST.ASTNodeType.IDENTIFIER,
+          name: this.consume(TokenType.IDENTIFIER, "Expected property name").value,
+        };
+        expr = {
+          type: AST.ASTNodeType.MEMBER_EXPR,
+          object: expr,
+          property,
+          computed: false,
+        };
+      } else if (this.match(TokenType.LBRACKET)) {
+        const property = this.expression();
+        this.consume(TokenType.RBRACKET, "Expected ']' after computed member expression");
+        expr = {
+          type: AST.ASTNodeType.MEMBER_EXPR,
+          object: expr,
+          property,
+          computed: true,
+        };
       } else {
         break;
       }
@@ -331,35 +351,7 @@ export class Parser {
   }
 
   private member(): AST.Expression {
-    let expr = this.primary();
-
-    while (true) {
-      if (this.match(TokenType.DOT)) {
-        const property: AST.Identifier = {
-          type: AST.ASTNodeType.IDENTIFIER,
-          name: this.consume(TokenType.IDENTIFIER, "Expected property name").value,
-        };
-        expr = {
-          type: AST.ASTNodeType.MEMBER_EXPR,
-          object: expr,
-          property,
-          computed: false,
-        };
-      } else if (this.match(TokenType.LBRACKET)) {
-        const property = this.expression();
-        this.consume(TokenType.RBRACKET, "Expected ']' after computed member expression");
-        expr = {
-          type: AST.ASTNodeType.MEMBER_EXPR,
-          object: expr,
-          property,
-          computed: true,
-        };
-      } else {
-        break;
-      }
-    }
-
-    return expr;
+    return this.call();
   }
 
   private primary(): AST.Expression {
