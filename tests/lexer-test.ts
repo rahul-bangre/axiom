@@ -1,7 +1,6 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { Tokenizer } from "../src/lexer/tokenizer.ts";
-import { TokenType } from "../src/lexer/tokens.ts";
-import { LexerError } from "../src/runtime/errors.ts";
+import { Tokenizer, TokenType } from "@lexer";
+import { LexerError } from "@runtime";
 
 Deno.test("Tokenizer - Numbers", () => {
   const tokenizer = new Tokenizer("42 3.14 0");

@@ -1,5 +1,5 @@
 import { KEYWORDS, Token, TokenType } from "./tokens.ts";
-import { LexerError } from "../runtime/errors.ts";
+import { LexerError } from "@runtime";
 
 export class Tokenizer {
   private source: string;

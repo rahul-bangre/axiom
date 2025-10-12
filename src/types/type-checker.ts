@@ -1,4 +1,4 @@
-import * as AST from "../parser/ast.ts";
+import * as AST from "@parser";
 import { TypeInfo } from "./types.ts";
 
 export class TypeChecker {

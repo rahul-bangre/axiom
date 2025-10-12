@@ -1,4 +1,4 @@
-import { RuntimeValue } from "../runtime/value.ts";
+import { RuntimeValue } from "@runtime";
 
 export class Environment {
   private parent?: Environment;

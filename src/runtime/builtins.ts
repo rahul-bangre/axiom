@@ -1,4 +1,4 @@
-import { RuntimeValue } from "./value.ts";
+import type { RuntimeValue } from "./value.ts";
 
 export function createBuiltins(): Map<string, RuntimeValue> {
   const builtins = new Map<string, RuntimeValue>();

@@ -1,6 +1,6 @@
-import * as AST from "../parser/ast.ts";
+import * as AST from "@parser";
 import { Environment } from "./environment.ts";
-import { RuntimeValue } from "../runtime/value.ts";
+import { RuntimeValue } from "@runtime";
 
 export class Interpreter {
   private global_env: Environment;

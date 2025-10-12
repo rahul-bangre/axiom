@@ -1,4 +1,4 @@
-import { Token, TokenType } from "../lexer/tokens.ts";
+import { Token, TokenType } from "@lexer";
 import * as AST from "./ast.ts";
 
 export class Parser {
