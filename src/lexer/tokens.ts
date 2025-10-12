@@ -10,6 +10,7 @@ export enum TokenType {
   FALSE,
   NULL,
   TYPE,
+  TYPEOF,
 
   PLUS,
   MINUS,
@@ -60,4 +61,5 @@ export const KEYWORDS: Record<string, TokenType> = {
   false: TokenType.FALSE,
   null: TokenType.NULL,
   type: TokenType.TYPE,
+  typeof: TokenType.TYPEOF,
 };

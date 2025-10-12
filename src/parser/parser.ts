@@ -390,7 +390,7 @@ export class Parser {
   }
 
   private unary(): AST.Expression {
-    if (this.match(TokenType.NOT, TokenType.MINUS)) {
+    if (this.match(TokenType.NOT, TokenType.MINUS, TokenType.TYPEOF)) {
       const operator = this.previous().value;
       const operand = this.unary();
       return {

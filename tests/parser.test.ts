@@ -120,6 +120,17 @@ Deno.test("Parser - Unary expression", () => {
   assertEquals(expr_stmt2.expression.operator, "!");
 });
 
+Deno.test("Parser - Typeof expression", () => {
+  const ast = parse("typeof x");
+  const expr_stmt = ast.body.body[0] as any;
+  const expr = expr_stmt.expression;
+
+  assertEquals(expr.type, ASTNodeType.UNARY_EXPR);
+  assertEquals(expr.operator, "typeof");
+  assertEquals(expr.operand.type, ASTNodeType.IDENTIFIER);
+  assertEquals(expr.operand.name, "x");
+});
+
 Deno.test("Parser - Const declaration without type", () => {
   const ast = parse("x = 5");
 

@@ -326,6 +326,37 @@ function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): RuntimeValue 
     return { type: ValueType.BOOLEAN, value: !isTruthy(operand) } as BooleanValue;
   }
 
+  if (node.operator === "typeof") {
+    let type_name: string;
+    switch (operand.type) {
+      case ValueType.NUMBER:
+        type_name = "number";
+        break;
+      case ValueType.STRING:
+        type_name = "string";
+        break;
+      case ValueType.BOOLEAN:
+        type_name = "boolean";
+        break;
+      case ValueType.NULL:
+        type_name = "null";
+        break;
+      case ValueType.ARRAY:
+        type_name = "array";
+        break;
+      case ValueType.OBJECT:
+        type_name = "object";
+        break;
+      case ValueType.FUNCTION:
+      case ValueType.NATIVE_FUNCTION:
+        type_name = "function";
+        break;
+      default:
+        type_name = "unknown";
+    }
+    return { type: ValueType.STRING, value: type_name } as StringValue;
+  }
+
   throw new RuntimeError(`Unknown unary operator: ${node.operator}`);
 }
 

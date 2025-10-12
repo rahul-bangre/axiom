@@ -120,6 +120,47 @@ Deno.test("Evaluator - Unary - logical NOT", () => {
   assertEquals(run("!!true").value, true);
 });
 
+Deno.test("Evaluator - Typeof - number", () => {
+  assertEquals(run("typeof 42").value, "number");
+  assertEquals(run("typeof 3.14").value, "number");
+  assertEquals(run("x = 5\ntypeof x").value, "number");
+});
+
+Deno.test("Evaluator - Typeof - string", () => {
+  assertEquals(run('typeof "hello"').value, "string");
+  assertEquals(run("s = 'test'\ntypeof s").value, "string");
+});
+
+Deno.test("Evaluator - Typeof - boolean", () => {
+  assertEquals(run("typeof true").value, "boolean");
+  assertEquals(run("typeof false").value, "boolean");
+});
+
+Deno.test("Evaluator - Typeof - null", () => {
+  assertEquals(run("typeof null").value, "null");
+});
+
+Deno.test("Evaluator - Typeof - array", () => {
+  assertEquals(run("typeof [1, 2, 3]").value, "array");
+  assertEquals(run("arr = []\ntypeof arr").value, "array");
+});
+
+Deno.test("Evaluator - Typeof - object", () => {
+  assertEquals(run("typeof {x: 1, y: 2}").value, "object");
+  assertEquals(run("obj = {}\ntypeof obj").value, "object");
+});
+
+Deno.test("Evaluator - Typeof - function", () => {
+  assertEquals(run("fn test() { return 1 }\ntypeof test").value, "function");
+  assertEquals(run("lambda = x => x * 2\ntypeof lambda").value, "function");
+});
+
+Deno.test("Evaluator - Typeof - with expressions", () => {
+  assertEquals(run("typeof (5 + 3)").value, "number");
+  assertEquals(run("typeof (true && false)").value, "boolean");
+  assertEquals(run('typeof ("hello" + " world")').value, "string");
+});
+
 Deno.test("Evaluator - Variable declaration and lookup", () => {
   const result = run(`
     x = 5
