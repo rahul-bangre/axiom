@@ -13,7 +13,10 @@ export class Parser {
     // TODO: Implement parser
     return {
       type: AST.ASTNodeType.PROGRAM,
-      body: [],
+      body: {
+        type: AST.ASTNodeType.BLOCK_STATEMENT,
+        body: [],
+      },
     };
   }
 }
