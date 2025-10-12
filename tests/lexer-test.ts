@@ -1,6 +1,7 @@
-import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "../src/lexer/tokenizer.ts";
 import { TokenType } from "../src/lexer/tokens.ts";
+import { LexerError } from "../src/runtime/errors.ts";
 
 Deno.test("Tokenizer - Numbers", () => {
   const tokenizer = new Tokenizer("42 3.14 0");
@@ -268,4 +269,42 @@ Deno.test("Tokenizer - Whitespace handling", () => {
   assertEquals(tokens[2].type, TokenType.NUMBER);
   assertEquals(tokens[3].type, TokenType.EOF);
   assertEquals(tokens.length, 4);
+});
+
+Deno.test("Tokenizer - LexerError for unterminated string", () => {
+  const tokenizer = new Tokenizer('"unterminated string');
+
+  assertThrows(
+    () => {
+      tokenizer.tokenize();
+    },
+    LexerError,
+    "Unterminated string",
+  );
+});
+
+Deno.test("Tokenizer - LexerError for unexpected character", () => {
+  const tokenizer = new Tokenizer("x @ y");
+
+  assertThrows(
+    () => {
+      tokenizer.tokenize();
+    },
+    LexerError,
+    "Unexpected character",
+  );
+});
+
+Deno.test("Tokenizer - LexerError includes line and column", () => {
+  const tokenizer = new Tokenizer('"unterminated');
+
+  try {
+    tokenizer.tokenize();
+  } catch (error) {
+    if (error instanceof LexerError) {
+      assertEquals(error.line, 1);
+      assertEquals(typeof error.column, "number");
+      assertEquals(error.name, "LexerError");
+    }
+  }
 });

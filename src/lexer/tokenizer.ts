@@ -1,4 +1,5 @@
 import { KEYWORDS, Token, TokenType } from "./tokens.ts";
+import { LexerError } from "../runtime/errors.ts";
 
 export class Tokenizer {
   private source: string;
@@ -73,7 +74,7 @@ export class Tokenizer {
     }
 
     if (this.isAtEnd()) {
-      throw new Error(`Unterminated string at line ${this.line}`);
+      throw new LexerError("Unterminated string", this.line, this.column);
     }
 
     const value = this.source.slice(start, this.pos);
@@ -146,13 +147,13 @@ export class Tokenizer {
           this.advance();
           return this.makeToken(TokenType.AND, "&&");
         }
-        throw new Error(`Unexpected character '${char}' at line ${this.line}`);
+        throw new LexerError(`Unexpected character '${char}'`, this.line, this.column);
       case "|":
         if (this.peek() === "|") {
           this.advance();
           return this.makeToken(TokenType.OR, "||");
         }
-        throw new Error(`Unexpected character '${char}' at line ${this.line}`);
+        throw new LexerError(`Unexpected character '${char}'`, this.line, this.column);
       case "(":
         return this.makeToken(TokenType.LPAREN, char);
       case ")":
@@ -172,7 +173,7 @@ export class Tokenizer {
       case ".":
         return this.makeToken(TokenType.DOT, char);
       default:
-        throw new Error(`Unexpected character '${char}' at line ${this.line}`);
+        throw new LexerError(`Unexpected character '${char}'`, this.line, this.column);
     }
   }
 
