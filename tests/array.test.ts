@@ -105,7 +105,7 @@ Deno.test("Array - method on non-array throws", () => {
   assertThrows(
     () => run('"not array".push(1)'),
     Error,
-    "Cannot access property on non-object type",
+    "String has no method 'push'",
   );
 });
 

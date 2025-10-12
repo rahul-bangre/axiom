@@ -1,5 +1,6 @@
 import * as AST from "@parser";
 import { createArrayMethods } from "@std";
+import { createStringMethods } from "../std/string.ts";
 import { checkParameterTypes, checkReturnType, checkType } from "@types";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 import { Environment } from "./environment.ts";
@@ -456,6 +457,23 @@ function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): Result<Runt
     }
 
     return runtimeError(`Array has no method '${property_name}'`);
+  }
+
+  if (object_val.type === ValueType.STRING) {
+    const string_val = object_val as StringValue;
+    const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
+      callFunction(callee, args, env);
+    const string_methods = createStringMethods(call_fn_with_env);
+
+    if (property_name in string_methods) {
+      return ok({
+        type: ValueType.NATIVE_FUNCTION,
+        name: property_name,
+        call: (args: RuntimeValue[]) => string_methods[property_name](string_val, ...args),
+      } as NativeFunctionValue);
+    }
+
+    return runtimeError(`String has no method '${property_name}'`);
   }
 
   if (object_val.type !== ValueType.OBJECT) {

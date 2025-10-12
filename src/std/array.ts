@@ -4,6 +4,7 @@ import {
   NullValue,
   NumberValue,
   RuntimeValue,
+  StringValue,
   ValueType,
 } from "@runtime";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
@@ -195,6 +196,36 @@ export function createArrayMethods(
       return ok({
         type: ValueType.ARRAY,
         elements: flattened_elements,
+      } as ArrayValue);
+    },
+    join: (arr_val, separator_val?) => {
+      const separator = separator_val && separator_val.type === ValueType.STRING
+        ? (separator_val as StringValue).value
+        : ",";
+
+      const string_parts = arr_val.elements.map((elem) => {
+        if (elem.type === ValueType.STRING) {
+          return (elem as StringValue).value;
+        } else if (elem.type === ValueType.NUMBER) {
+          return String((elem as NumberValue).value);
+        } else if (elem.type === ValueType.BOOLEAN) {
+          return String((elem as BooleanValue).value);
+        } else if (elem.type === ValueType.NULL) {
+          return "null";
+        } else {
+          return "[object]";
+        }
+      });
+
+      return ok({
+        type: ValueType.STRING,
+        value: string_parts.join(separator),
+      } as StringValue);
+    },
+    reverse: (arr_val) => {
+      return ok({
+        type: ValueType.ARRAY,
+        elements: [...arr_val.elements].reverse(),
       } as ArrayValue);
     },
   };
