@@ -1,26 +1,100 @@
-// demonstrating immutable array operations
+// Binary Tree with Recursive Schema Validation using schema.lazy()
 
-// chain operations to build an array
-fruits = [].push("apple").push("banana").push("cherry")
-print("Built with chaining:", fruits)
+NodeSchema = schema.object({
+  value: schema.number(),
+  left: schema.optional(schema.lazy(() => NodeSchema)),
+  right: schema.optional(schema.lazy(() => NodeSchema))
+})
 
-// more chaining
-result = [1, 2, 3].push(4).push(5).pop()
-print("Chained [1,2,3].push(4).push(5).pop():", result)
+fn maxDepth(root) {
+  if (root == null) {
+    return 0
+  }
 
-// get first and last
-numbers = [10, 20, 30, 40]
-print("First:", numbers.first())
-print("Last:", numbers.last())
+  left_depth = maxDepth(root.left)
+  right_depth = maxDepth(root.right)
 
-// slice
-middle = numbers.slice(1, 3)
-print("Middle slice(1,3):", middle)
+  return (left_depth > right_depth) ? left_depth + 1 : right_depth + 1
+}
 
-// concat
-combined = [1, 2].concat([3, 4])
-print("Concatenated:", combined)
+fn createNode(val, left, right) {
+  node = {value: val, left: left, right: right}
+  return NodeSchema.parse(node)
+}
 
-// complex chaining
-final = [1, 2].push(3).concat([4, 5]).slice(1, 4)
-print("Complex chain:", final)
+print("=== Maximum Depth of Binary Tree ===")
+print("(with schema validation)\n")
+
+// Test 1: Single node
+tree1 = createNode(1, null, null)
+print("Test 1 - Single node")
+print("Depth: " + maxDepth(tree1))
+
+// Test 2: Balanced tree depth 3
+//       3
+//      / \
+//     9  20
+//       /  \
+//      15   7
+tree2 = createNode(3,
+  createNode(9, null, null),
+  createNode(20,
+    createNode(15, null, null),
+    createNode(7, null, null)
+  )
+)
+print("\nTest 2 - Balanced tree")
+print("Depth: " + maxDepth(tree2))
+
+// Test 3: Left-skewed tree depth 4
+tree3 = createNode(1,
+  createNode(2,
+    createNode(3,
+      createNode(4, null, null),
+      null
+    ),
+    null
+  ),
+  null
+)
+print("\nTest 3 - Left-skewed tree")
+print("Depth: " + maxDepth(tree3))
+
+// Test 4: Right-skewed tree
+tree4 = createNode(1,
+  null,
+  createNode(2,
+    null,
+    createNode(3, null, null)
+  )
+)
+print("\nTest 4 - Right-skewed tree")
+print("Depth: " + maxDepth(tree4))
+
+// Test 5: Empty tree
+print("\nTest 5 - Empty tree")
+print("Depth: " + maxDepth(null))
+
+// Test 6: Complex tree
+//         1
+//        / \
+//       2   3
+//      /   / \
+//     4   5   6
+//    /
+//   7
+tree6 = createNode(1,
+  createNode(2,
+    createNode(4,
+      createNode(7, null, null),
+      null
+    ),
+    null
+  ),
+  createNode(3,
+    createNode(5, null, null),
+    createNode(6, null, null)
+  )
+)
+print("\nTest 6 - Complex unbalanced tree")
+print("Depth: " + maxDepth(tree6))

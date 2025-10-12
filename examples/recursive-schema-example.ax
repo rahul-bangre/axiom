@@ -1,0 +1,114 @@
+print("=== Recursive Schema Validation ===\n")
+
+// Define a recursive tree schema using schema.lazy()
+TreeNodeSchema = schema.object({
+  value: schema.number(),
+  children: schema.optional(schema.array(schema.lazy(() => TreeNodeSchema)))
+})
+
+print("1. Validating a simple tree node:")
+node1 = {value: 1, children: null}
+validated1 = TreeNodeSchema.parse(node1)
+print("Single node validated!")
+
+print("\n2. Validating a tree with children:")
+tree = {
+  value: 1,
+  children: [
+    {value: 2, children: null},
+    {value: 3, children: null}
+  ]
+}
+validated_tree = TreeNodeSchema.parse(tree)
+print("Tree with children validated!")
+
+print("\n3. Validating a deep nested tree:")
+deep_tree = {
+  value: 1,
+  children: [
+    {
+      value: 2,
+      children: [
+        {value: 4, children: null},
+        {value: 5, children: null}
+      ]
+    },
+    {
+      value: 3,
+      children: [
+        {value: 6, children: null}
+      ]
+    }
+  ]
+}
+validated_deep = TreeNodeSchema.parse(deep_tree)
+print("Deep nested tree validated!")
+
+print("\n=== Recursive Binary Tree Example ===\n")
+
+fn getBinaryTreeSchema() {
+  return BinaryTreeSchema
+}
+
+// Binary tree with recursive validation
+BinaryTreeSchema = schema.object({
+  value: schema.number(),
+  left: schema.optional(schema.lazy(getBinaryTreeSchema)),
+  right: schema.optional(schema.lazy(getBinaryTreeSchema))
+})
+
+fn createNode(val, left, right) {
+  node = {value: val, left: left, right: right}
+  return BinaryTreeSchema.parse(node)
+}
+
+// Create a binary tree
+//       1
+//      / \
+//     2   3
+//    /
+//   4
+binary_tree = createNode(1,
+  createNode(2,
+    createNode(4, null, null),
+    null
+  ),
+  createNode(3, null, null)
+)
+
+print("Binary tree with recursive validation:")
+print("Root value: " + binary_tree.value)
+print("Left child value: " + binary_tree.left.value)
+print("Right child value: " + binary_tree.right.value)
+print("Left-left child value: " + binary_tree.left.left.value)
+
+print("\n=== Linked List Example ===\n")
+
+fn getLinkedListNodeSchema() {
+  return LinkedListNodeSchema
+}
+
+// Recursive linked list
+LinkedListNodeSchema = schema.object({
+  value: schema.number(),
+  next: schema.optional(schema.lazy(getLinkedListNodeSchema))
+})
+
+list = {
+  value: 1,
+  next: {
+    value: 2,
+    next: {
+      value: 3,
+      next: null
+    }
+  }
+}
+
+validated_list = LinkedListNodeSchema.parse(list)
+print("Linked list validated!")
+print("First value: " + validated_list.value)
+print("Second value: " + validated_list.next.value)
+print("Third value: " + validated_list.next.next.value)
+
+print("\n✅ Recursive schema validation working!")

@@ -1,6 +1,8 @@
-import { ok, Result, runtimeError } from "../types/result.ts";
+import { ok, runtimeError } from "../types/result.ts";
+import { json_parse, json_stringify } from "../std/json.ts";
+import { schema_namespace } from "../std/schema.ts";
 import { Environment } from "./environment.ts";
-import { NativeFunctionValue, RuntimeValue, ValueType } from "./value.ts";
+import { NativeFunctionValue, ObjectValue, RuntimeValue, ValueType } from "./value.ts";
 
 function printValue(value: RuntimeValue): string {
   switch (value.type) {
@@ -70,6 +72,17 @@ export function createGlobalEnv(): Environment {
 
   global_env.define("print", print);
   global_env.define("len", len);
+
+  const json_object: ObjectValue = {
+    type: ValueType.OBJECT,
+    properties: new Map([
+      ["parse", json_parse],
+      ["stringify", json_stringify],
+    ]),
+  };
+  global_env.define("json", json_object);
+
+  global_env.define("schema", schema_namespace);
 
   return global_env;
 }
