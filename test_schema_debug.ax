@@ -1,4 +1,0 @@
-s = schema.array(schema.number()).min(5)
-result = s.parse([1, 2, 3])
-print("Result ok: " + typeof(result))
-print("Result: " + typeof(result))

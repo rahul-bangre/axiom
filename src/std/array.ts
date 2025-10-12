@@ -228,5 +228,23 @@ export function createArrayMethods(
         elements: [...arr_val.elements].reverse(),
       } as ArrayValue);
     },
+    sort: (arr_val) => {
+      const sorted = [...arr_val.elements].sort((a, b) => {
+        if (a.type === ValueType.NUMBER && b.type === ValueType.NUMBER) {
+          return (a as NumberValue).value - (b as NumberValue).value;
+        }
+        if (a.type === ValueType.STRING && b.type === ValueType.STRING) {
+          const str_a = (a as StringValue).value;
+          const str_b = (b as StringValue).value;
+          return str_a < str_b ? -1 : str_a > str_b ? 1 : 0;
+        }
+        return 0;
+      });
+
+      return ok({
+        type: ValueType.ARRAY,
+        elements: sorted,
+      } as ArrayValue);
+    },
   };
 }
