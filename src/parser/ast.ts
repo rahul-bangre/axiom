@@ -14,6 +14,7 @@ export enum ASTNodeType {
   UNARY_EXPR,
   CALL_EXPR,
   MEMBER_EXPR,
+  LAMBDA_EXPR,
 
   CONST_DECLARATION,
   FUNC_DECLARATION,
@@ -61,6 +62,14 @@ export interface ArrayLiteral extends ASTNode {
 export interface ObjectLiteral extends ASTNode {
   type: ASTNodeType.OBJECT_LITERAL;
   properties: Array<{ key: string; value: Expression }>;
+}
+
+export interface LambdaExpr extends ASTNode {
+  type: ASTNodeType.LAMBDA_EXPR;
+  params: Array<{ name: string; type_annotation?: string }>;
+  return_type?: string;
+  body: Expression | BlockStatement;
+  is_expression_body: boolean;
 }
 
 export interface Identifier extends ASTNode {
@@ -140,6 +149,7 @@ export type Expression =
   | NullLiteral
   | ArrayLiteral
   | ObjectLiteral
+  | LambdaExpr
   | Identifier
   | BinaryExpr
   | UnaryExpr

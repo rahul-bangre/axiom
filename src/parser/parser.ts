@@ -172,7 +172,93 @@ export class Parser {
   }
 
   private expression(): AST.Expression {
+    return this.lambda();
+  }
+
+  private lambda(): AST.Expression {
+    if (this.check(TokenType.IDENTIFIER)) {
+      const next_pos = this.current + 1;
+      if (next_pos < this.tokens.length && this.tokens[next_pos].type === TokenType.ARROW) {
+        const param_name = this.advance().value;
+        this.consume(TokenType.ARROW, "Expected '=>'");
+        return this.lambdaBody([{ name: param_name }]);
+      }
+    }
+
+    if (this.check(TokenType.LPAREN)) {
+      const paren_pos = this.current;
+      this.advance();
+
+      if (!this.check(TokenType.IDENTIFIER) && !this.check(TokenType.RPAREN)) {
+        this.current = paren_pos;
+        return this.logicalOr();
+      }
+
+      const params: Array<{ name: string; type_annotation?: string }> = [];
+
+      if (!this.check(TokenType.RPAREN)) {
+        do {
+          if (!this.check(TokenType.IDENTIFIER)) {
+            this.current = paren_pos;
+            return this.logicalOr();
+          }
+
+          const param_name = this.advance().value;
+          let type_annotation: string | undefined;
+
+          if (this.match(TokenType.COLON)) {
+            type_annotation = this.consume(TokenType.IDENTIFIER, "Expected type name").value;
+          }
+
+          params.push({ name: param_name, type_annotation });
+        } while (this.match(TokenType.COMMA));
+      }
+
+      if (!this.check(TokenType.RPAREN)) {
+        this.current = paren_pos;
+        return this.logicalOr();
+      }
+
+      this.advance();
+
+      let return_type: string | undefined;
+      if (this.match(TokenType.COLON)) {
+        return_type = this.consume(TokenType.IDENTIFIER, "Expected return type").value;
+      }
+
+      if (this.match(TokenType.ARROW)) {
+        return this.lambdaBody(params, return_type);
+      }
+
+      this.current = paren_pos;
+    }
+
     return this.logicalOr();
+  }
+
+  private lambdaBody(
+    params: Array<{ name: string; type_annotation?: string }>,
+    return_type?: string,
+  ): AST.LambdaExpr {
+    if (this.match(TokenType.LBRACE)) {
+      const body = this.blockStatement();
+      return {
+        type: AST.ASTNodeType.LAMBDA_EXPR,
+        params,
+        return_type,
+        body,
+        is_expression_body: false,
+      };
+    }
+
+    const body_expr = this.lambda();
+    return {
+      type: AST.ASTNodeType.LAMBDA_EXPR,
+      params,
+      return_type,
+      body: body_expr,
+      is_expression_body: true,
+    };
   }
 
   private logicalOr(): AST.Expression {

@@ -48,6 +48,9 @@ export function evaluate(node: AST.ASTNode, env: Environment): RuntimeValue {
     case AST.ASTNodeType.OBJECT_LITERAL:
       return evaluateObjectLiteral(node as AST.ObjectLiteral, env);
 
+    case AST.ASTNodeType.LAMBDA_EXPR:
+      return evaluateLambda(node as AST.LambdaExpr, env);
+
     case AST.ASTNodeType.IDENTIFIER:
       return evaluateIdentifier(node as AST.Identifier, env);
 
@@ -406,6 +409,30 @@ function evaluateFuncDeclaration(node: AST.FuncDeclaration, env: Environment): R
   };
 
   return env.define(node.name, func);
+}
+
+function evaluateLambda(node: AST.LambdaExpr, env: Environment): RuntimeValue {
+  const body_as_block: AST.BlockStatement = node.is_expression_body
+    ? {
+      type: AST.ASTNodeType.BLOCK_STATEMENT,
+      body: [{
+        type: AST.ASTNodeType.RETURN_STATEMENT,
+        value: node.body as AST.Expression,
+      }],
+    }
+    : node.body as AST.BlockStatement;
+
+  const func: FunctionValue = {
+    type: ValueType.FUNCTION,
+    name: "<lambda>",
+    params: node.params.map((p) => p.name),
+    param_info: node.params,
+    return_type: node.return_type,
+    body: body_as_block,
+    closure: env,
+  };
+
+  return func;
 }
 
 function evaluateIfStatement(node: AST.IfStatement, env: Environment): RuntimeValue {

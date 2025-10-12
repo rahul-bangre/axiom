@@ -1,0 +1,60 @@
+// testing lambda functions!
+
+print("=== Lambda Functions ===")
+print()
+
+// simple lambda
+double = x => x * 2
+print("double(5) =", double(5))
+print()
+
+// lambda with multiple params
+add = (x, y) => x + y
+print("add(3, 4) =", add(3, 4))
+print()
+
+// lambda with no params
+get_answer = () => 42
+print("get_answer() =", get_answer())
+print()
+
+// lambda with block body
+complex = x => {
+  doubled = x * 2
+  squared = doubled * doubled
+  return squared
+}
+print("complex(3) =", complex(3))
+print()
+
+// lambdas in map
+numbers = [1, 2, 3, 4, 5]
+doubled = numbers.map(x => x * 2)
+print("Doubled:", doubled)
+print()
+
+// chaining with lambdas
+result = [1, 2, 3, 4, 5, 6]
+  .filter(x => x % 2 == 0)
+  .map(x => x * x)
+print("Even squares:", result)
+print()
+
+// lambda with type annotations
+typed_add = (x: int, y: int): int => x + y
+print("typed_add(10, 20) =", typed_add(10, 20))
+print()
+
+// nested lambdas (higher-order function)
+make_adder = x => y => x + y
+add5 = make_adder(5)
+print("add5(3) =", add5(3))
+print()
+
+// reduce with lambda
+sum = [1, 2, 3, 4, 5].reduce((acc, x) => acc + x, 0)
+print("Sum of 1-5:", sum)
+print()
+
+print("=== Lambdas work! ===")
+

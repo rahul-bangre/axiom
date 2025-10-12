@@ -123,6 +123,10 @@ export class Tokenizer {
           this.advance();
           return this.makeToken(TokenType.EQUALS, "==");
         }
+        if (this.peek() === ">") {
+          this.advance();
+          return this.makeToken(TokenType.ARROW, "=>");
+        }
         return this.makeToken(TokenType.ASSIGN, char);
       case "!":
         if (this.peek() === "=") {

@@ -39,6 +39,7 @@ export enum TokenType {
   COMMA,
   COLON,
   DOT,
+  ARROW,
 
   EOF,
 }
