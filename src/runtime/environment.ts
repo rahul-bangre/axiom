@@ -1,5 +1,5 @@
-import { ReferenceError } from "./errors.ts";
 import { RuntimeValue } from "./value.ts";
+import { ok, referenceError, Result } from "../types/result.ts";
 
 export class Environment {
   private parent?: Environment;
@@ -12,26 +12,25 @@ export class Environment {
 
   /* define a new variable in the current scope.
      since axiom is immutable, once defined, a variable cannot be redefined in the same scope. */
-  define(name: string, value: RuntimeValue): RuntimeValue {
+  define(name: string, value: RuntimeValue): Result<RuntimeValue> {
     if (this.variables.has(name)) {
-      throw new ReferenceError(`Variable '${name}' is already defined in this scope`);
+      return referenceError(`Variable '${name}' is already defined in this scope`);
     }
     this.variables.set(name, value);
-    return value;
+    return ok(value);
   }
 
-  /* look up a variable in the current scope or parent scopes.
-     throws ReferenceError if the variable is not found. */
-  get(name: string): RuntimeValue {
+  /* look up a variable in the current scope or parent scopes. */
+  get(name: string): Result<RuntimeValue> {
     if (this.variables.has(name)) {
-      return this.variables.get(name)!;
+      return ok(this.variables.get(name)!);
     }
 
     if (this.parent) {
       return this.parent.get(name);
     }
 
-    throw new ReferenceError(`Variable '${name}' is not defined`);
+    return referenceError(`Variable '${name}' is not defined`);
   }
 
   /* check if a variable exists in the current scope (not parent scopes). */

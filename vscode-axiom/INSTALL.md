@@ -70,16 +70,19 @@ After installation, you should see:
 ## Troubleshooting
 
 ### Extension not loading:
+
 - Check the extensions directory path
 - Make sure folder name is exactly `axiom-0.1.0`
 - Restart VSCode completely (not just reload window)
 
 ### No syntax highlighting:
+
 - Check file extension is `.ax`
 - Click the language mode in bottom-right corner
 - Select "Axiom" from the list
 
 ### Changes not appearing:
+
 - Clear VSCode cache: Delete `~/.vscode/extensions/.obsolete`
 - Completely quit and restart VSCode
 - Check Developer Console for errors: `Help > Toggle Developer Tools`
@@ -91,6 +94,3 @@ rm -rf ~/.vscode/extensions/axiom-0.1.0
 ```
 
 Then reload VSCode.
-
-
-

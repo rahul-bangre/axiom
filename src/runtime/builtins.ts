@@ -1,3 +1,4 @@
+import { ok, Result, runtimeError } from "../types/result.ts";
 import { Environment } from "./environment.ts";
 import { NativeFunctionValue, RuntimeValue, ValueType } from "./value.ts";
 
@@ -35,9 +36,9 @@ const print: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "print",
   call: (args: RuntimeValue[]) => {
-    const output = args.map(printValue).join(" ");
-    console.log(output);
-    return { type: ValueType.NULL };
+    const output_str = args.map(printValue).join(" ");
+    console.log(output_str);
+    return ok({ type: ValueType.NULL });
   },
 };
 
@@ -46,30 +47,29 @@ const len: NativeFunctionValue = {
   name: "len",
   call: (args: RuntimeValue[]) => {
     if (args.length !== 1) {
-      throw new Error("len() expects exactly 1 argument");
+      return runtimeError("len() expects exactly 1 argument");
     }
 
-    const arg = args[0];
+    const arg_val = args[0];
 
-    if (arg.type === ValueType.STRING) {
-      return { type: ValueType.NUMBER, value: (arg as any).value.length };
+    if (arg_val.type === ValueType.STRING) {
+      return ok({ type: ValueType.NUMBER, value: (arg_val as any).value.length });
     }
 
-    if (arg.type === ValueType.ARRAY) {
-      return { type: ValueType.NUMBER, value: (arg as any).elements.length };
+    if (arg_val.type === ValueType.ARRAY) {
+      return ok({ type: ValueType.NUMBER, value: (arg_val as any).elements.length });
     }
 
-    throw new Error(`len() requires a string or array, got ${arg.type}`);
+    return runtimeError(`len() requires a string or array, got ${arg_val.type}`);
   },
 };
 
 /* create a global environment with built-in functions */
 export function createGlobalEnv(): Environment {
-  const env = new Environment();
+  const global_env = new Environment();
 
-  // core builtins
-  env.define("print", print);
-  env.define("len", len);
+  global_env.define("print", print);
+  global_env.define("len", len);
 
-  return env;
+  return global_env;
 }

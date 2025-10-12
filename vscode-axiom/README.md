@@ -19,7 +19,8 @@ The extension provides highlighting for:
 - **Numbers**: Integers, floats, and hex literals
 - **Strings**: Single and double quoted strings with escape sequences
 - **Comments**: Line (`//`) and block (`/* */`) comments
-- **Operators**: Arithmetic (`+`, `-`, `*`, `/`, `%`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`), logical (`&&`, `||`, `!`), ternary (`?`, `:`), and arrow (`=>`)
+- **Operators**: Arithmetic (`+`, `-`, `*`, `/`, `%`), comparison (`==`, `!=`, `<`, `>`, `<=`,
+  `>=`), logical (`&&`, `||`, `!`), ternary (`?`, `:`), and arrow (`=>`)
 - **Functions**: Function declarations and calls
 
 ## Installation
@@ -105,6 +106,3 @@ MIT
 
 - [Axiom Repository](https://github.com/yourusername/axiom)
 - [Language Documentation](https://github.com/yourusername/axiom/blob/main/README.md)
-
-
-

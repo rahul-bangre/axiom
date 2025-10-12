@@ -1,5 +1,6 @@
 import type { BlockStatement } from "@parser";
 import type { Environment } from "./environment.ts";
+import type { Result } from "../types/result.ts";
 
 export enum ValueType {
   NUMBER,
@@ -58,5 +59,5 @@ export interface FunctionValue extends RuntimeValue {
 export interface NativeFunctionValue extends RuntimeValue {
   type: ValueType.NATIVE_FUNCTION;
   name: string;
-  call: (args: RuntimeValue[]) => RuntimeValue;
+  call: (args: RuntimeValue[]) => Result<RuntimeValue>;
 }

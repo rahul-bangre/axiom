@@ -3,190 +3,199 @@ import {
   BooleanValue,
   NullValue,
   NumberValue,
-  RuntimeError,
   RuntimeValue,
-  TypeError,
   ValueType,
 } from "@runtime";
+import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 
-type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => RuntimeValue;
+type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => Result<RuntimeValue>;
 type IsTruthy = (value: RuntimeValue) => boolean;
 
 export function createArrayMethods(
   callFunction: CallFunction,
   isTruthy: IsTruthy,
-): Record<string, (arr: ArrayValue, ...args: RuntimeValue[]) => RuntimeValue> {
+): Record<string, (arr: ArrayValue, ...args: RuntimeValue[]) => Result<RuntimeValue>> {
   return {
-    push: (arr, elem) => {
-      return {
+    push: (arr_val, elem_val) => {
+      return ok({
         type: ValueType.ARRAY,
-        elements: [...arr.elements, elem],
-      } as ArrayValue;
+        elements: [...arr_val.elements, elem_val],
+      } as ArrayValue);
     },
-    pop: (arr) => {
-      if (arr.elements.length === 0) {
-        throw new RuntimeError("pop() called on empty array");
+    pop: (arr_val) => {
+      if (arr_val.elements.length === 0) {
+        return runtimeError("pop() called on empty array");
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
-        elements: arr.elements.slice(0, -1),
-      } as ArrayValue;
+        elements: arr_val.elements.slice(0, -1),
+      } as ArrayValue);
     },
-    first: (arr) => {
-      if (arr.elements.length === 0) {
-        throw new RuntimeError("first() called on empty array");
+    first: (arr_val) => {
+      if (arr_val.elements.length === 0) {
+        return runtimeError("first() called on empty array");
       }
-      return arr.elements[0];
+      return ok(arr_val.elements[0]);
     },
-    last: (arr) => {
-      if (arr.elements.length === 0) {
-        throw new RuntimeError("last() called on empty array");
+    last: (arr_val) => {
+      if (arr_val.elements.length === 0) {
+        return runtimeError("last() called on empty array");
       }
-      return arr.elements[arr.elements.length - 1];
+      return ok(arr_val.elements[arr_val.elements.length - 1]);
     },
-    slice: (arr, start_val, end_val?) => {
+    slice: (arr_val, start_val, end_val?) => {
       if (start_val.type !== ValueType.NUMBER) {
-        throw new TypeError(`slice() start index must be a number, got ${start_val.type}`);
+        return typeError(`slice() start index must be a number, got ${start_val.type}`);
       }
-      const start = Math.floor((start_val as NumberValue).value);
-      let end = arr.elements.length;
+      const start_idx = Math.floor((start_val as NumberValue).value);
+      let end_idx = arr_val.elements.length;
       if (end_val) {
         if (end_val.type !== ValueType.NUMBER) {
-          throw new TypeError(`slice() end index must be a number, got ${end_val.type}`);
+          return typeError(`slice() end index must be a number, got ${end_val.type}`);
         }
-        end = Math.floor((end_val as NumberValue).value);
+        end_idx = Math.floor((end_val as NumberValue).value);
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
-        elements: arr.elements.slice(start, end),
-      } as ArrayValue;
+        elements: arr_val.elements.slice(start_idx, end_idx),
+      } as ArrayValue);
     },
-    concat: (arr, other) => {
-      if (other.type !== ValueType.ARRAY) {
-        throw new TypeError(`concat() requires an array, got ${other.type}`);
+    concat: (arr_val, other_val) => {
+      if (other_val.type !== ValueType.ARRAY) {
+        return typeError(`concat() requires an array, got ${other_val.type}`);
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
-        elements: [...arr.elements, ...(other as ArrayValue).elements],
-      } as ArrayValue;
+        elements: [...arr_val.elements, ...(other_val as ArrayValue).elements],
+      } as ArrayValue);
     },
-    map: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`map() requires a function, got ${fn.type}`);
+    map: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`map() requires a function, got ${fn_val.type}`);
       }
       const mapped_elements: RuntimeValue[] = [];
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        mapped_elements.push(result);
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        mapped_elements.push(call_result.value);
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
         elements: mapped_elements,
-      } as ArrayValue;
+      } as ArrayValue);
     },
-    filter: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`filter() requires a function, got ${fn.type}`);
+    filter: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`filter() requires a function, got ${fn_val.type}`);
       }
       const filtered_elements: RuntimeValue[] = [];
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (isTruthy(result)) {
-          filtered_elements.push(arr.elements[i]);
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (isTruthy(call_result.value)) {
+          filtered_elements.push(arr_val.elements[i]);
         }
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
         elements: filtered_elements,
-      } as ArrayValue;
+      } as ArrayValue);
     },
-    reduce: (arr, fn, initial) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`reduce() requires a function, got ${fn.type}`);
+    reduce: (arr_val, fn_val, initial_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`reduce() requires a function, got ${fn_val.type}`);
       }
-      if (!initial) {
-        throw new RuntimeError("reduce() requires an initial value");
+      if (!initial_val) {
+        return runtimeError("reduce() requires an initial value");
       }
-      let accumulator = initial;
-      for (let i = 0; i < arr.elements.length; i++) {
-        accumulator = callFunction(fn, [accumulator, arr.elements[i]]);
+      let accumulator_val = initial_val;
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [accumulator_val, arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        accumulator_val = call_result.value;
       }
-      return accumulator;
+      return ok(accumulator_val);
     },
-    forEach: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`forEach() requires a function, got ${fn.type}`);
+    forEach: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`forEach() requires a function, got ${fn_val.type}`);
       }
-      for (let i = 0; i < arr.elements.length; i++) {
-        callFunction(fn, [arr.elements[i]]);
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
       }
-      return { type: ValueType.NULL } as NullValue;
+      return ok({ type: ValueType.NULL } as NullValue);
     },
-    find: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`find() requires a function, got ${fn.type}`);
+    find: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`find() requires a function, got ${fn_val.type}`);
       }
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (isTruthy(result)) {
-          return arr.elements[i];
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (isTruthy(call_result.value)) {
+          return ok(arr_val.elements[i]);
         }
       }
-      return { type: ValueType.NULL } as NullValue;
+      return ok({ type: ValueType.NULL } as NullValue);
     },
-    findIndex: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`findIndex() requires a function, got ${fn.type}`);
+    findIndex: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`findIndex() requires a function, got ${fn_val.type}`);
       }
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (isTruthy(result)) {
-          return { type: ValueType.NUMBER, value: i } as NumberValue;
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (isTruthy(call_result.value)) {
+          return ok({ type: ValueType.NUMBER, value: i } as NumberValue);
         }
       }
-      return { type: ValueType.NUMBER, value: -1 } as NumberValue;
+      return ok({ type: ValueType.NUMBER, value: -1 } as NumberValue);
     },
-    some: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`some() requires a function, got ${fn.type}`);
+    some: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`some() requires a function, got ${fn_val.type}`);
       }
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (isTruthy(result)) {
-          return { type: ValueType.BOOLEAN, value: true } as BooleanValue;
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (isTruthy(call_result.value)) {
+          return ok({ type: ValueType.BOOLEAN, value: true } as BooleanValue);
         }
       }
-      return { type: ValueType.BOOLEAN, value: false } as BooleanValue;
+      return ok({ type: ValueType.BOOLEAN, value: false } as BooleanValue);
     },
-    every: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`every() requires a function, got ${fn.type}`);
+    every: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`every() requires a function, got ${fn_val.type}`);
       }
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (!isTruthy(result)) {
-          return { type: ValueType.BOOLEAN, value: false } as BooleanValue;
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (!isTruthy(call_result.value)) {
+          return ok({ type: ValueType.BOOLEAN, value: false } as BooleanValue);
         }
       }
-      return { type: ValueType.BOOLEAN, value: true } as BooleanValue;
+      return ok({ type: ValueType.BOOLEAN, value: true } as BooleanValue);
     },
-    flatMap: (arr, fn) => {
-      if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-        throw new TypeError(`flatMap() requires a function, got ${fn.type}`);
+    flatMap: (arr_val, fn_val) => {
+      if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
+        return typeError(`flatMap() requires a function, got ${fn_val.type}`);
       }
       const flattened_elements: RuntimeValue[] = [];
-      for (let i = 0; i < arr.elements.length; i++) {
-        const result = callFunction(fn, [arr.elements[i]]);
-        if (result.type === ValueType.ARRAY) {
-          flattened_elements.push(...(result as ArrayValue).elements);
+      for (let i = 0; i < arr_val.elements.length; i++) {
+        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        if (!call_result.ok) return call_result;
+        if (call_result.value.type === ValueType.ARRAY) {
+          flattened_elements.push(...(call_result.value as ArrayValue).elements);
         } else {
-          flattened_elements.push(result);
+          flattened_elements.push(call_result.value);
         }
       }
-      return {
+      return ok({
         type: ValueType.ARRAY,
         elements: flattened_elements,
-      } as ArrayValue;
+      } as ArrayValue);
     },
   };
 }

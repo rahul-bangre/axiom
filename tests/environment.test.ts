@@ -1,9 +1,8 @@
-import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   BooleanValue,
   Environment,
   NumberValue,
-  ReferenceError,
   RuntimeValue,
   StringValue,
   ValueType,
@@ -23,157 +22,198 @@ function makeBoolean(value: boolean): BooleanValue {
 }
 
 Deno.test("Environment - Define and get variable", () => {
-  const env = new Environment();
-  const value = makeNumber(42);
+  const test_env = new Environment();
+  const test_value = makeNumber(42);
 
-  env.define("x", value);
-  const result = env.get("x");
+  const define_result = test_env.define("x", test_value);
+  assertEquals(define_result.ok, true);
 
-  assertEquals(result, value);
+  const get_result = test_env.get("x");
+  assertEquals(get_result.ok, true);
+  if (get_result.ok) {
+    assertEquals(get_result.value, test_value);
+  }
 });
 
-Deno.test("Environment - Get undefined variable throws ReferenceError", () => {
-  const env = new Environment();
+Deno.test("Environment - Get undefined variable returns error", () => {
+  const test_env = new Environment();
 
-  assertThrows(
-    () => {
-      env.get("undefined_var");
-    },
-    ReferenceError,
-    "Variable 'undefined_var' is not defined",
-  );
+  const get_result = test_env.get("undefined_var");
+  assertEquals(get_result.ok, false);
+  if (!get_result.ok) {
+    assertEquals(get_result.error.includes("undefined_var"), true);
+    assertEquals(get_result.error.includes("ReferenceError"), true);
+  }
 });
 
 Deno.test("Environment - Cannot redefine variable in same scope", () => {
-  const env = new Environment();
+  const test_env = new Environment();
 
-  env.define("x", makeNumber(1));
+  const first_define = test_env.define("x", makeNumber(1));
+  assertEquals(first_define.ok, true);
 
-  assertThrows(
-    () => {
-      env.define("x", makeNumber(2));
-    },
-    ReferenceError,
-    "Variable 'x' is already defined in this scope",
-  );
+  const second_define = test_env.define("x", makeNumber(2));
+  assertEquals(second_define.ok, false);
+  if (!second_define.ok) {
+    assertEquals(second_define.error.includes("already defined"), true);
+  }
 });
 
 Deno.test("Environment - Child scope inherits from parent", () => {
-  const parent = new Environment();
-  parent.define("x", makeNumber(42));
+  const parent_env = new Environment();
+  parent_env.define("x", makeNumber(42));
 
-  const child = new Environment(parent);
-  const result = child.get("x");
+  const child_env = new Environment(parent_env);
+  const get_result = child_env.get("x");
 
-  assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 42);
+  assertEquals(get_result.ok, true);
+  if (get_result.ok) {
+    assertEquals(get_result.value.type, ValueType.NUMBER);
+    assertEquals((get_result.value as any).value, 42);
+  }
 });
 
 Deno.test("Environment - Child scope can shadow parent variable", () => {
-  const parent = new Environment();
-  parent.define("x", makeNumber(42));
+  const parent_env = new Environment();
+  parent_env.define("x", makeNumber(42));
 
-  const child = new Environment(parent);
-  child.define("x", makeNumber(100));
+  const child_env = new Environment(parent_env);
+  child_env.define("x", makeNumber(100));
 
-  assertEquals((child.get("x") as any).value, 100);
-  assertEquals((parent.get("x") as any).value, 42);
+  const child_get = child_env.get("x");
+  assertEquals(child_get.ok, true);
+  if (child_get.ok) assertEquals((child_get.value as any).value, 100);
+
+  const parent_get = parent_env.get("x");
+  assertEquals(parent_get.ok, true);
+  if (parent_get.ok) assertEquals((parent_get.value as any).value, 42);
 });
 
 Deno.test("Environment - Extend creates child environment", () => {
-  const parent = new Environment();
-  parent.define("parent_var", makeString("parent"));
+  const parent_env = new Environment();
+  parent_env.define("parent_var", makeString("parent"));
 
-  const child = parent.extend();
-  child.define("child_var", makeString("child"));
+  const child_env = parent_env.extend();
+  child_env.define("child_var", makeString("child"));
 
-  assertEquals((child.get("parent_var") as any).value, "parent");
-  assertEquals((child.get("child_var") as any).value, "child");
+  const parent_get = child_env.get("parent_var");
+  assertEquals(parent_get.ok, true);
+  if (parent_get.ok) assertEquals((parent_get.value as any).value, "parent");
 
-  assertThrows(() => {
-    parent.get("child_var");
-  }, ReferenceError);
+  const child_get = child_env.get("child_var");
+  assertEquals(child_get.ok, true);
+  if (child_get.ok) assertEquals((child_get.value as any).value, "child");
+
+  const missing_get = parent_env.get("child_var");
+  assertEquals(missing_get.ok, false);
 });
 
 Deno.test("Environment - Deep nesting works correctly", () => {
-  const level1 = new Environment();
-  level1.define("a", makeNumber(1));
+  const level1_env = new Environment();
+  level1_env.define("a", makeNumber(1));
 
-  const level2 = level1.extend();
-  level2.define("b", makeNumber(2));
+  const level2_env = level1_env.extend();
+  level2_env.define("b", makeNumber(2));
 
-  const level3 = level2.extend();
-  level3.define("c", makeNumber(3));
+  const level3_env = level2_env.extend();
+  level3_env.define("c", makeNumber(3));
 
-  assertEquals((level3.get("a") as any).value, 1);
-  assertEquals((level3.get("b") as any).value, 2);
-  assertEquals((level3.get("c") as any).value, 3);
+  const get_a = level3_env.get("a");
+  assertEquals(get_a.ok && (get_a.value as any).value, 1);
+
+  const get_b = level3_env.get("b");
+  assertEquals(get_b.ok && (get_b.value as any).value, 2);
+
+  const get_c = level3_env.get("c");
+  assertEquals(get_c.ok && (get_c.value as any).value, 3);
 });
 
 Deno.test("Environment - hasLocal checks only current scope", () => {
-  const parent = new Environment();
-  parent.define("parent_var", makeNumber(1));
+  const parent_env = new Environment();
+  parent_env.define("parent_var", makeNumber(1));
 
-  const child = parent.extend();
-  child.define("child_var", makeNumber(2));
+  const child_env = parent_env.extend();
+  child_env.define("child_var", makeNumber(2));
 
-  assertEquals(child.hasLocal("child_var"), true);
-  assertEquals(child.hasLocal("parent_var"), false);
+  assertEquals(child_env.hasLocal("child_var"), true);
+  assertEquals(child_env.hasLocal("parent_var"), false);
 });
 
 Deno.test("Environment - has checks current and parent scopes", () => {
-  const parent = new Environment();
-  parent.define("parent_var", makeNumber(1));
+  const parent_env = new Environment();
+  parent_env.define("parent_var", makeNumber(1));
 
-  const child = parent.extend();
-  child.define("child_var", makeNumber(2));
+  const child_env = parent_env.extend();
+  child_env.define("child_var", makeNumber(2));
 
-  assertEquals(child.has("child_var"), true);
-  assertEquals(child.has("parent_var"), true);
-  assertEquals(child.has("nonexistent"), false);
+  assertEquals(child_env.has("child_var"), true);
+  assertEquals(child_env.has("parent_var"), true);
+  assertEquals(child_env.has("nonexistent"), false);
 });
 
 Deno.test("Environment - Multiple children don't interfere", () => {
-  const parent = new Environment();
-  parent.define("shared", makeNumber(0));
+  const parent_env = new Environment();
+  parent_env.define("shared", makeNumber(0));
 
-  const child1 = parent.extend();
-  child1.define("x", makeNumber(1));
+  const child1_env = parent_env.extend();
+  child1_env.define("x", makeNumber(1));
 
-  const child2 = parent.extend();
-  child2.define("y", makeNumber(2));
+  const child2_env = parent_env.extend();
+  child2_env.define("y", makeNumber(2));
 
-  assertEquals((child1.get("shared") as any).value, 0);
-  assertEquals((child1.get("x") as any).value, 1);
-  assertThrows(() => child1.get("y"), ReferenceError);
+  const child1_shared = child1_env.get("shared");
+  assertEquals(child1_shared.ok && (child1_shared.value as any).value, 0);
 
-  assertEquals((child2.get("shared") as any).value, 0);
-  assertEquals((child2.get("y") as any).value, 2);
-  assertThrows(() => child2.get("x"), ReferenceError);
+  const child1_x = child1_env.get("x");
+  assertEquals(child1_x.ok && (child1_x.value as any).value, 1);
+
+  const child1_y = child1_env.get("y");
+  assertEquals(child1_y.ok, false);
+
+  const child2_shared = child2_env.get("shared");
+  assertEquals(child2_shared.ok && (child2_shared.value as any).value, 0);
+
+  const child2_y = child2_env.get("y");
+  assertEquals(child2_y.ok && (child2_y.value as any).value, 2);
+
+  const child2_x = child2_env.get("x");
+  assertEquals(child2_x.ok, false);
 });
 
 Deno.test("Environment - Can store different value types", () => {
-  const env = new Environment();
+  const test_env = new Environment();
 
-  env.define("num", makeNumber(42));
-  env.define("str", makeString("hello"));
-  env.define("bool", makeBoolean(true));
-  env.define("null_val", { type: ValueType.NULL });
+  test_env.define("num", makeNumber(42));
+  test_env.define("str", makeString("hello"));
+  test_env.define("bool", makeBoolean(true));
+  test_env.define("null_val", { type: ValueType.NULL });
 
-  assertEquals((env.get("num") as any).value, 42);
-  assertEquals((env.get("str") as any).value, "hello");
-  assertEquals((env.get("bool") as any).value, true);
-  assertEquals(env.get("null_val").type, ValueType.NULL);
+  const get_num = test_env.get("num");
+  assertEquals(get_num.ok && (get_num.value as any).value, 42);
+
+  const get_str = test_env.get("str");
+  assertEquals(get_str.ok && (get_str.value as any).value, "hello");
+
+  const get_bool = test_env.get("bool");
+  assertEquals(get_bool.ok && (get_bool.value as any).value, true);
+
+  const get_null = test_env.get("null_val");
+  assertEquals(get_null.ok && get_null.value.type, ValueType.NULL);
 });
 
 Deno.test("Environment - snake_case variable names", () => {
-  const env = new Environment();
+  const test_env = new Environment();
 
-  env.define("user_name", makeString("rahul"));
-  env.define("user_age", makeNumber(21));
-  env.define("is_active", makeBoolean(true));
+  test_env.define("user_name", makeString("rahul"));
+  test_env.define("user_age", makeNumber(21));
+  test_env.define("is_active", makeBoolean(true));
 
-  assertEquals((env.get("user_name") as any).value, "rahul");
-  assertEquals((env.get("user_age") as any).value, 21);
-  assertEquals((env.get("is_active") as any).value, true);
+  const get_name = test_env.get("user_name");
+  assertEquals(get_name.ok && (get_name.value as any).value, "rahul");
+
+  const get_age = test_env.get("user_age");
+  assertEquals(get_age.ok && (get_age.value as any).value, 21);
+
+  const get_active = test_env.get("is_active");
+  assertEquals(get_active.ok && (get_active.value as any).value, true);
 });

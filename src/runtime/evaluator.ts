@@ -1,8 +1,8 @@
 import * as AST from "@parser";
 import { createArrayMethods } from "@std";
 import { checkParameterTypes, checkReturnType, checkType } from "@types";
+import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 import { Environment } from "./environment.ts";
-import { RuntimeError, TypeError } from "./errors.ts";
 import {
   ArrayValue,
   BooleanValue,
@@ -16,7 +16,7 @@ import {
   ValueType,
 } from "./value.ts";
 
-export function evaluate(node: AST.ASTNode, env: Environment): RuntimeValue {
+export function evaluate(node: AST.ASTNode, env: Environment): Result<RuntimeValue> {
   switch (node.type) {
     case AST.ASTNodeType.PROGRAM:
       return evaluateProgram(node as AST.Program, env);
@@ -28,19 +28,23 @@ export function evaluate(node: AST.ASTNode, env: Environment): RuntimeValue {
       return evaluate((node as AST.ExpressionStatement).expression, env);
 
     case AST.ASTNodeType.NUMBER_LITERAL:
-      return { type: ValueType.NUMBER, value: (node as AST.NumberLiteral).value } as NumberValue;
+      return ok(
+        { type: ValueType.NUMBER, value: (node as AST.NumberLiteral).value } as NumberValue,
+      );
 
     case AST.ASTNodeType.STRING_LITERAL:
-      return { type: ValueType.STRING, value: (node as AST.StringLiteral).value } as StringValue;
+      return ok(
+        { type: ValueType.STRING, value: (node as AST.StringLiteral).value } as StringValue,
+      );
 
     case AST.ASTNodeType.BOOLEAN_LITERAL:
-      return {
+      return ok({
         type: ValueType.BOOLEAN,
         value: (node as AST.BooleanLiteral).value,
-      } as BooleanValue;
+      } as BooleanValue);
 
     case AST.ASTNodeType.NULL_LITERAL:
-      return { type: ValueType.NULL } as NullValue;
+      return ok({ type: ValueType.NULL } as NullValue);
 
     case AST.ASTNodeType.ARRAY_LITERAL:
       return evaluateArrayLiteral(node as AST.ArrayLiteral, env);
@@ -82,171 +86,194 @@ export function evaluate(node: AST.ASTNode, env: Environment): RuntimeValue {
       return evaluateReturnStatement(node as AST.ReturnStatement, env);
 
     default:
-      throw new RuntimeError(`Unhandled AST node type: ${node.type}`);
+      return runtimeError(`Unhandled AST node type: ${node.type}`);
   }
 }
 
-function evaluateProgram(program: AST.Program, env: Environment): RuntimeValue {
+function evaluateProgram(program: AST.Program, env: Environment): Result<RuntimeValue> {
   return evaluateBlockStatement(program.body, env);
 }
 
-function evaluateBlockStatement(block: AST.BlockStatement, env: Environment): RuntimeValue {
+function evaluateBlockStatement(block: AST.BlockStatement, env: Environment): Result<RuntimeValue> {
   let result: RuntimeValue = { type: ValueType.NULL } as NullValue;
 
   for (const statement of block.body) {
-    result = evaluate(statement, env);
+    const stmt_result = evaluate(statement, env);
+    if (!stmt_result.ok) return stmt_result;
+
+    result = stmt_result.value;
 
     if (result.type === ValueType.NULL && (result as any).isReturn) {
-      return result;
+      return ok(result);
     }
   }
 
-  return result;
+  return ok(result);
 }
 
-function evaluateArrayLiteral(node: AST.ArrayLiteral, env: Environment): ArrayValue {
-  const elements = node.elements.map((elem) => evaluate(elem, env));
-  return { type: ValueType.ARRAY, elements };
+function evaluateArrayLiteral(node: AST.ArrayLiteral, env: Environment): Result<RuntimeValue> {
+  const elements: RuntimeValue[] = [];
+
+  for (const elem of node.elements) {
+    const elem_result = evaluate(elem, env);
+    if (!elem_result.ok) return elem_result;
+    elements.push(elem_result.value);
+  }
+
+  return ok({ type: ValueType.ARRAY, elements });
 }
 
-function evaluateObjectLiteral(node: AST.ObjectLiteral, env: Environment): ObjectValue {
+function evaluateObjectLiteral(node: AST.ObjectLiteral, env: Environment): Result<RuntimeValue> {
   const properties = new Map<string, RuntimeValue>();
 
   for (const prop of node.properties) {
-    const value = evaluate(prop.value, env);
-    properties.set(prop.key, value);
+    const value_result = evaluate(prop.value, env);
+    if (!value_result.ok) return value_result;
+    properties.set(prop.key, value_result.value);
   }
 
-  return { type: ValueType.OBJECT, properties };
+  return ok({ type: ValueType.OBJECT, properties });
 }
 
-function evaluateIdentifier(node: AST.Identifier, env: Environment): RuntimeValue {
+function evaluateIdentifier(node: AST.Identifier, env: Environment): Result<RuntimeValue> {
   return env.get(node.name);
 }
 
-function evaluateBinaryExpr(node: AST.BinaryExpr, env: Environment): RuntimeValue {
-  const left = evaluate(node.left, env);
-  const right = evaluate(node.right, env);
+function evaluateBinaryExpr(node: AST.BinaryExpr, env: Environment): Result<RuntimeValue> {
+  const left_result = evaluate(node.left, env);
+  if (!left_result.ok) return left_result;
+
+  const right_result = evaluate(node.right, env);
+  if (!right_result.ok) return right_result;
+
+  const left_val = left_result.value;
+  const right_val = right_result.value;
 
   if (["+", "-", "*", "/", "%"].includes(node.operator)) {
-    return evaluateArithmetic(left, right, node.operator);
+    return evaluateArithmetic(left_val, right_val, node.operator);
   }
 
   if (["==", "!=", "<", ">", "<=", ">="].includes(node.operator)) {
-    return evaluateComparison(left, right, node.operator);
+    return evaluateComparison(left_val, right_val, node.operator);
   }
 
   if (node.operator === "&&" || node.operator === "||") {
-    return evaluateLogical(left, right, node.operator);
+    return evaluateLogical(left_val, right_val, node.operator);
   }
 
-  throw new RuntimeError(`Unknown binary operator: ${node.operator}`);
+  return runtimeError(`Unknown binary operator: ${node.operator}`);
 }
 
 function evaluateArithmetic(
-  left: RuntimeValue,
-  right: RuntimeValue,
+  left_val: RuntimeValue,
+  right_val: RuntimeValue,
   operator: string,
-): RuntimeValue {
-  if (operator === "+" && (left.type === ValueType.STRING || right.type === ValueType.STRING)) {
-    const left_str = left.type === ValueType.STRING
-      ? (left as StringValue).value
-      : String((left as NumberValue).value);
-    const right_str = right.type === ValueType.STRING
-      ? (right as StringValue).value
-      : String((right as NumberValue).value);
-    return { type: ValueType.STRING, value: left_str + right_str } as StringValue;
+): Result<RuntimeValue> {
+  if (
+    operator === "+" && (left_val.type === ValueType.STRING || right_val.type === ValueType.STRING)
+  ) {
+    const left_str = left_val.type === ValueType.STRING
+      ? (left_val as StringValue).value
+      : String((left_val as NumberValue).value);
+    const right_str = right_val.type === ValueType.STRING
+      ? (right_val as StringValue).value
+      : String((right_val as NumberValue).value);
+    return ok({ type: ValueType.STRING, value: left_str + right_str } as StringValue);
   }
 
-  if (left.type !== ValueType.NUMBER || right.type !== ValueType.NUMBER) {
-    throw new TypeError(`Arithmetic operators require numbers, got ${left.type} and ${right.type}`);
+  if (left_val.type !== ValueType.NUMBER || right_val.type !== ValueType.NUMBER) {
+    return typeError(
+      `Arithmetic operators require numbers, got ${left_val.type} and ${right_val.type}`,
+    );
   }
 
-  const left_val = (left as NumberValue).value;
-  const right_val = (right as NumberValue).value;
+  const left_num = (left_val as NumberValue).value;
+  const right_num = (right_val as NumberValue).value;
 
   switch (operator) {
     case "+":
-      return { type: ValueType.NUMBER, value: left_val + right_val } as NumberValue;
+      return ok({ type: ValueType.NUMBER, value: left_num + right_num } as NumberValue);
     case "-":
-      return { type: ValueType.NUMBER, value: left_val - right_val } as NumberValue;
+      return ok({ type: ValueType.NUMBER, value: left_num - right_num } as NumberValue);
     case "*":
-      return { type: ValueType.NUMBER, value: left_val * right_val } as NumberValue;
+      return ok({ type: ValueType.NUMBER, value: left_num * right_num } as NumberValue);
     case "/":
-      if (right_val === 0) throw new RuntimeError("Division by zero");
-      return { type: ValueType.NUMBER, value: left_val / right_val } as NumberValue;
+      if (right_num === 0) return runtimeError("Division by zero");
+      return ok({ type: ValueType.NUMBER, value: left_num / right_num } as NumberValue);
     case "%":
-      return { type: ValueType.NUMBER, value: left_val % right_val } as NumberValue;
+      return ok({ type: ValueType.NUMBER, value: left_num % right_num } as NumberValue);
     default:
-      throw new RuntimeError(`Unknown arithmetic operator: ${operator}`);
+      return runtimeError(`Unknown arithmetic operator: ${operator}`);
   }
 }
 
 function evaluateComparison(
-  left: RuntimeValue,
-  right: RuntimeValue,
+  left_val: RuntimeValue,
+  right_val: RuntimeValue,
   operator: string,
-): BooleanValue {
+): Result<RuntimeValue> {
   if (operator === "==") {
-    return { type: ValueType.BOOLEAN, value: areValuesEqual(left, right) };
+    return ok({ type: ValueType.BOOLEAN, value: areValuesEqual(left_val, right_val) });
   }
   if (operator === "!=") {
-    return { type: ValueType.BOOLEAN, value: !areValuesEqual(left, right) };
+    return ok({ type: ValueType.BOOLEAN, value: !areValuesEqual(left_val, right_val) });
   }
 
-  if (left.type !== ValueType.NUMBER || right.type !== ValueType.NUMBER) {
-    throw new TypeError(`Comparison operators require numbers, got ${left.type} and ${right.type}`);
+  if (left_val.type !== ValueType.NUMBER || right_val.type !== ValueType.NUMBER) {
+    return typeError(
+      `Comparison operators require numbers, got ${left_val.type} and ${right_val.type}`,
+    );
   }
 
-  const left_val = (left as NumberValue).value;
-  const right_val = (right as NumberValue).value;
+  const left_num = (left_val as NumberValue).value;
+  const right_num = (right_val as NumberValue).value;
 
   switch (operator) {
     case "<":
-      return { type: ValueType.BOOLEAN, value: left_val < right_val };
+      return ok({ type: ValueType.BOOLEAN, value: left_num < right_num });
     case ">":
-      return { type: ValueType.BOOLEAN, value: left_val > right_val };
+      return ok({ type: ValueType.BOOLEAN, value: left_num > right_num });
     case "<=":
-      return { type: ValueType.BOOLEAN, value: left_val <= right_val };
+      return ok({ type: ValueType.BOOLEAN, value: left_num <= right_num });
     case ">=":
-      return { type: ValueType.BOOLEAN, value: left_val >= right_val };
+      return ok({ type: ValueType.BOOLEAN, value: left_num >= right_num });
     default:
-      throw new RuntimeError(`Unknown comparison operator: ${operator}`);
+      return runtimeError(`Unknown comparison operator: ${operator}`);
   }
 }
 
-function areValuesEqual(left: RuntimeValue, right: RuntimeValue): boolean {
-  if (left.type !== right.type) return false;
+function areValuesEqual(left_val: RuntimeValue, right_val: RuntimeValue): boolean {
+  if (left_val.type !== right_val.type) return false;
 
-  switch (left.type) {
+  switch (left_val.type) {
     case ValueType.NUMBER:
-      return (left as NumberValue).value === (right as NumberValue).value;
+      return (left_val as NumberValue).value === (right_val as NumberValue).value;
     case ValueType.STRING:
-      return (left as StringValue).value === (right as StringValue).value;
+      return (left_val as StringValue).value === (right_val as StringValue).value;
     case ValueType.BOOLEAN:
-      return (left as BooleanValue).value === (right as BooleanValue).value;
+      return (left_val as BooleanValue).value === (right_val as BooleanValue).value;
     case ValueType.NULL:
       return true;
     default:
-      return left === right;
+      return left_val === right_val;
   }
 }
 
 function evaluateLogical(
-  left: RuntimeValue,
-  right: RuntimeValue,
+  left_val: RuntimeValue,
+  right_val: RuntimeValue,
   operator: string,
-): BooleanValue {
-  const left_truthy = isTruthy(left);
+): Result<RuntimeValue> {
+  const left_truthy = isTruthy(left_val);
 
   if (operator === "&&") {
-    return { type: ValueType.BOOLEAN, value: left_truthy && isTruthy(right) };
+    return ok({ type: ValueType.BOOLEAN, value: left_truthy && isTruthy(right_val) });
   }
   if (operator === "||") {
-    return { type: ValueType.BOOLEAN, value: left_truthy || isTruthy(right) };
+    return ok({ type: ValueType.BOOLEAN, value: left_truthy || isTruthy(right_val) });
   }
 
-  throw new RuntimeError(`Unknown logical operator: ${operator}`);
+  return runtimeError(`Unknown logical operator: ${operator}`);
 }
 
 function isTruthy(value: RuntimeValue): boolean {
@@ -269,9 +296,9 @@ function callFunction(
   callee: RuntimeValue,
   args: RuntimeValue[],
   env: Environment,
-): RuntimeValue {
+): Result<RuntimeValue> {
   if (callee.type !== ValueType.FUNCTION && callee.type !== ValueType.NATIVE_FUNCTION) {
-    throw new TypeError(`Cannot call non-function value of type ${callee.type}`);
+    return typeError(`Cannot call non-function value of type ${callee.type}`);
   }
 
   if (callee.type === ValueType.NATIVE_FUNCTION) {
@@ -281,54 +308,63 @@ function callFunction(
   const func = callee as FunctionValue;
 
   if (args.length !== func.params.length) {
-    throw new RuntimeError(
+    return runtimeError(
       `Function '${func.name}' expects ${func.params.length} arguments, got ${args.length}`,
     );
   }
 
-  checkParameterTypes(args, func.param_info, func.name);
+  const param_check = checkParameterTypes(args, func.param_info, func.name);
+  if (!param_check.ok) return param_check;
 
   const func_env = func.closure.extend();
 
   for (let i = 0; i < func.params.length; i++) {
-    func_env.define(func.params[i], args[i]);
+    const define_result = func_env.define(func.params[i], args[i]);
+    if (!define_result.ok) return define_result;
   }
 
   const result = evaluateBlockStatement(func.body, func_env);
+  if (!result.ok) return result;
 
-  if ((result as any).isReturn) {
-    const return_value = (result as any).returnValue || { type: ValueType.NULL };
+  if ((result.value as any).isReturn) {
+    const return_val = (result.value as any).returnValue || { type: ValueType.NULL };
 
     const has_typed_params = func.param_info.some((p) => p.type_annotation !== undefined);
     const inferred_return_type = func.return_type || (has_typed_params ? "void" : undefined);
 
     if (inferred_return_type) {
-      checkReturnType(return_value, inferred_return_type, func.name);
+      const type_check = checkReturnType(return_val, inferred_return_type, func.name);
+      if (!type_check.ok) return type_check;
     }
 
-    return return_value;
+    return ok(return_val);
   }
 
   return result;
 }
 
-function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): RuntimeValue {
-  const operand = evaluate(node.operand, env);
+function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): Result<RuntimeValue> {
+  const operand_result = evaluate(node.operand, env);
+  if (!operand_result.ok) return operand_result;
+
+  const operand_val = operand_result.value;
 
   if (node.operator === "-") {
-    if (operand.type !== ValueType.NUMBER) {
-      throw new TypeError(`Unary minus requires a number, got ${operand.type}`);
+    if (operand_val.type !== ValueType.NUMBER) {
+      return typeError(`Unary minus requires a number, got ${operand_val.type}`);
     }
-    return { type: ValueType.NUMBER, value: -(operand as NumberValue).value } as NumberValue;
+    return ok(
+      { type: ValueType.NUMBER, value: -(operand_val as NumberValue).value } as NumberValue,
+    );
   }
 
   if (node.operator === "!") {
-    return { type: ValueType.BOOLEAN, value: !isTruthy(operand) } as BooleanValue;
+    return ok({ type: ValueType.BOOLEAN, value: !isTruthy(operand_val) } as BooleanValue);
   }
 
   if (node.operator === "typeof") {
     let type_name: string;
-    switch (operand.type) {
+    switch (operand_val.type) {
       case ValueType.NUMBER:
         type_name = "number";
         break;
@@ -354,85 +390,109 @@ function evaluateUnaryExpr(node: AST.UnaryExpr, env: Environment): RuntimeValue 
       default:
         type_name = "unknown";
     }
-    return { type: ValueType.STRING, value: type_name } as StringValue;
+    return ok({ type: ValueType.STRING, value: type_name } as StringValue);
   }
 
-  throw new RuntimeError(`Unknown unary operator: ${node.operator}`);
+  return runtimeError(`Unknown unary operator: ${node.operator}`);
 }
 
-function evaluateCallExpr(node: AST.CallExpr, env: Environment): RuntimeValue {
-  const callee = evaluate(node.callee, env);
-  const args = node.args.map((arg) => evaluate(arg, env));
-  return callFunction(callee, args, env);
+function evaluateCallExpr(node: AST.CallExpr, env: Environment): Result<RuntimeValue> {
+  const callee_result = evaluate(node.callee, env);
+  if (!callee_result.ok) return callee_result;
+
+  const args_list: RuntimeValue[] = [];
+  for (const arg of node.args) {
+    const arg_result = evaluate(arg, env);
+    if (!arg_result.ok) return arg_result;
+    args_list.push(arg_result.value);
+  }
+
+  return callFunction(callee_result.value, args_list, env);
 }
 
-function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): RuntimeValue {
-  const object = evaluate(node.object, env);
+function evaluateMemberExpr(node: AST.MemberExpr, env: Environment): Result<RuntimeValue> {
+  const object_result = evaluate(node.object, env);
+  if (!object_result.ok) return object_result;
+
+  const object_val = object_result.value;
 
   if (node.computed) {
-    if (object.type !== ValueType.ARRAY) {
-      throw new TypeError(`Cannot use bracket notation on non-array type ${object.type}`);
+    if (object_val.type !== ValueType.ARRAY) {
+      return typeError(`Cannot use bracket notation on non-array type ${object_val.type}`);
     }
 
-    const index = evaluate(node.property, env);
-    if (index.type !== ValueType.NUMBER) {
-      throw new TypeError(`Array index must be a number, got ${index.type}`);
+    const index_result = evaluate(node.property, env);
+    if (!index_result.ok) return index_result;
+
+    const index_val = index_result.value;
+    if (index_val.type !== ValueType.NUMBER) {
+      return typeError(`Array index must be a number, got ${index_val.type}`);
     }
 
-    const array = object as ArrayValue;
-    const idx = (index as NumberValue).value;
+    const array_val = object_val as ArrayValue;
+    const idx = (index_val as NumberValue).value;
 
-    if (idx < 0 || idx >= array.elements.length) {
-      throw new RuntimeError(`Array index out of bounds: ${idx}`);
+    if (idx < 0 || idx >= array_val.elements.length) {
+      return runtimeError(`Array index out of bounds: ${idx}`);
     }
 
-    return array.elements[Math.floor(idx)];
+    return ok(array_val.elements[Math.floor(idx)]);
   }
 
   const property_name = (node.property as AST.Identifier).name;
 
-  if (object.type === ValueType.ARRAY) {
-    const array = object as ArrayValue;
+  if (object_val.type === ValueType.ARRAY) {
+    const array_val = object_val as ArrayValue;
     const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
       callFunction(callee, args, env);
     const array_methods = createArrayMethods(call_fn_with_env, isTruthy);
 
     if (property_name in array_methods) {
-      return {
+      return ok({
         type: ValueType.NATIVE_FUNCTION,
         name: property_name,
-        call: (args: RuntimeValue[]) => array_methods[property_name](array, ...args),
-      } as NativeFunctionValue;
+        call: (args: RuntimeValue[]) => array_methods[property_name](array_val, ...args),
+      } as NativeFunctionValue);
     }
 
-    throw new RuntimeError(`Array has no method '${property_name}'`);
+    return runtimeError(`Array has no method '${property_name}'`);
   }
 
-  if (object.type !== ValueType.OBJECT) {
-    throw new TypeError(`Cannot access property on non-object type ${object.type}`);
+  if (object_val.type !== ValueType.OBJECT) {
+    return typeError(`Cannot access property on non-object type ${object_val.type}`);
   }
 
-  const obj = object as ObjectValue;
+  const obj_val = object_val as ObjectValue;
 
-  if (!obj.properties.has(property_name)) {
-    throw new RuntimeError(`Property '${property_name}' does not exist on object`);
+  if (!obj_val.properties.has(property_name)) {
+    return runtimeError(`Property '${property_name}' does not exist on object`);
   }
 
-  return obj.properties.get(property_name)!;
+  return ok(obj_val.properties.get(property_name)!);
 }
 
-function evaluateConstDeclaration(node: AST.ConstDeclaration, env: Environment): RuntimeValue {
-  const value = evaluate(node.value, env);
+function evaluateConstDeclaration(
+  node: AST.ConstDeclaration,
+  env: Environment,
+): Result<RuntimeValue> {
+  const value_result = evaluate(node.value, env);
+  if (!value_result.ok) return value_result;
+
+  const value = value_result.value;
 
   if (node.type_annotation) {
-    checkType(value, node.type_annotation, `variable '${node.identifier}'`);
+    const type_check = checkType(value, node.type_annotation, `variable '${node.identifier}'`);
+    if (!type_check.ok) return type_check;
   }
 
   return env.define(node.identifier, value);
 }
 
-function evaluateFuncDeclaration(node: AST.FuncDeclaration, env: Environment): RuntimeValue {
-  const func: FunctionValue = {
+function evaluateFuncDeclaration(
+  node: AST.FuncDeclaration,
+  env: Environment,
+): Result<RuntimeValue> {
+  const func_val: FunctionValue = {
     type: ValueType.FUNCTION,
     name: node.name,
     params: node.params.map((p) => p.name),
@@ -442,10 +502,10 @@ function evaluateFuncDeclaration(node: AST.FuncDeclaration, env: Environment): R
     closure: env,
   };
 
-  return env.define(node.name, func);
+  return env.define(node.name, func_val);
 }
 
-function evaluateLambda(node: AST.LambdaExpr, env: Environment): RuntimeValue {
+function evaluateLambda(node: AST.LambdaExpr, env: Environment): Result<RuntimeValue> {
   const body_as_block: AST.BlockStatement = node.is_expression_body
     ? {
       type: AST.ASTNodeType.BLOCK_STATEMENT,
@@ -456,7 +516,7 @@ function evaluateLambda(node: AST.LambdaExpr, env: Environment): RuntimeValue {
     }
     : node.body as AST.BlockStatement;
 
-  const func: FunctionValue = {
+  const func_val: FunctionValue = {
     type: ValueType.FUNCTION,
     name: "<lambda>",
     params: node.params.map((p) => p.name),
@@ -466,35 +526,46 @@ function evaluateLambda(node: AST.LambdaExpr, env: Environment): RuntimeValue {
     closure: env,
   };
 
-  return func;
+  return ok(func_val);
 }
 
-function evaluateTernaryExpr(node: AST.TernaryExpr, env: Environment): RuntimeValue {
-  const condition = evaluate(node.condition, env);
+function evaluateTernaryExpr(node: AST.TernaryExpr, env: Environment): Result<RuntimeValue> {
+  const condition_result = evaluate(node.condition, env);
+  if (!condition_result.ok) return condition_result;
 
-  if (isTruthy(condition)) {
+  if (isTruthy(condition_result.value)) {
     return evaluate(node.true_expr, env);
   }
 
   return evaluate(node.false_expr, env);
 }
 
-function evaluateIfStatement(node: AST.IfStatement, env: Environment): RuntimeValue {
-  const condition = evaluate(node.condition, env);
+function evaluateIfStatement(node: AST.IfStatement, env: Environment): Result<RuntimeValue> {
+  const condition_result = evaluate(node.condition, env);
+  if (!condition_result.ok) return condition_result;
 
-  if (isTruthy(condition)) {
+  if (isTruthy(condition_result.value)) {
     return evaluateBlockStatement(node.body, env);
   }
 
-  return { type: ValueType.NULL } as NullValue;
+  return ok({ type: ValueType.NULL } as NullValue);
 }
 
-function evaluateReturnStatement(node: AST.ReturnStatement, env: Environment): RuntimeValue {
-  const return_value = node.value ? evaluate(node.value, env) : { type: ValueType.NULL };
+function evaluateReturnStatement(
+  node: AST.ReturnStatement,
+  env: Environment,
+): Result<RuntimeValue> {
+  let return_val: RuntimeValue = { type: ValueType.NULL };
 
-  return {
+  if (node.value) {
+    const value_result = evaluate(node.value, env);
+    if (!value_result.ok) return value_result;
+    return_val = value_result.value;
+  }
+
+  return ok({
     type: ValueType.NULL,
     isReturn: true,
-    returnValue: return_value,
-  } as any;
+    returnValue: return_val,
+  } as any);
 }

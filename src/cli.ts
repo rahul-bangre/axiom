@@ -32,30 +32,36 @@ function printValue(value: RuntimeValue): string {
   }
 }
 
-async function runFile(filepath: string): Promise<void> {
+async function runFile(file_path: string): Promise<void> {
   try {
-    const source = await Deno.readTextFile(filepath);
+    const source_code = await Deno.readTextFile(file_path);
 
-    const tokenizer = new Tokenizer(source);
+    const tokenizer = new Tokenizer(source_code);
     const tokens = tokenizer.tokenize();
 
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    const ast_node = parser.parse();
 
-    const env = createGlobalEnv();
-    const result = evaluate(ast, env);
+    const global_env = createGlobalEnv();
+    const eval_result = evaluate(ast_node, global_env);
 
-    if (result.type !== ValueType.NULL || (result as any).isReturn) {
-      console.log(printValue(result));
-    }
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      console.error(`Error: File '${filepath}' not found`);
+    if (!eval_result.ok) {
+      console.error(`Error: ${eval_result.error}`);
       Deno.exit(1);
     }
 
-    const err = error as Error;
-    console.error(`Error: ${err.message}`);
+    const result_val = eval_result.value;
+    if (result_val.type !== ValueType.NULL || (result_val as any).isReturn) {
+      console.log(printValue(result_val));
+    }
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      console.error(`Error: File '${file_path}' not found`);
+      Deno.exit(1);
+    }
+
+    const err_obj = error as Error;
+    console.error(`Error: ${err_obj.message}`);
     Deno.exit(1);
   }
 }
@@ -80,26 +86,26 @@ function showVersion(): void {
 }
 
 async function main(): Promise<void> {
-  const args = Deno.args;
+  const cli_args = Deno.args;
 
-  if (args.length === 0) {
+  if (cli_args.length === 0) {
     showHelp();
     Deno.exit(1);
   }
 
-  const command = args[0];
+  const command_arg = cli_args[0];
 
-  if (command === "--help" || command === "-h") {
+  if (command_arg === "--help" || command_arg === "-h") {
     showHelp();
     return;
   }
 
-  if (command === "--version" || command === "-v") {
+  if (command_arg === "--version" || command_arg === "-v") {
     showVersion();
     return;
   }
 
-  await runFile(command);
+  await runFile(command_arg);
 }
 
 if (import.meta.main) {

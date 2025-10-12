@@ -1,12 +1,6 @@
 import { RuntimeValue, ValueType } from "@runtime";
+import { ok, Result, typeError } from "./result.ts";
 import { AxiomType, parseType, typeToString } from "./types.ts";
-
-export class TypeCheckError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "TypeCheckError";
-  }
-}
 
 /* infer the axiom type from a runtime value */
 export function inferType(value: RuntimeValue): AxiomType {
@@ -38,21 +32,23 @@ export function checkType(
   value: RuntimeValue,
   type_annotation: string,
   context: string,
-): void {
+): Result<void> {
   const expected_type = parseType(type_annotation);
   const actual_type = inferType(value);
 
   if (expected_type === AxiomType.ANY) {
-    return;
+    return ok(undefined);
   }
 
   if (!typesMatch(actual_type, expected_type)) {
-    throw new TypeCheckError(
+    return typeError(
       `Type mismatch in ${context}: expected ${typeToString(expected_type)}, got ${
         typeToString(actual_type)
       }`,
     );
   }
+
+  return ok(undefined);
 }
 
 /* check if two types are compatible */
@@ -78,22 +74,21 @@ export function checkReturnType(
   return_value: RuntimeValue,
   expected_type: string | undefined,
   function_name: string,
-): void {
+): Result<void> {
   if (!expected_type) {
-    return;
+    return ok(undefined);
   }
 
-  // void type means function should not return a value (only null)
   if (expected_type.toLowerCase() === "void") {
     if (return_value.type !== ValueType.NULL) {
-      throw new TypeCheckError(
+      return typeError(
         `Function '${function_name}' with void return type cannot return a value`,
       );
     }
-    return;
+    return ok(undefined);
   }
 
-  checkType(return_value, expected_type, `return statement of function '${function_name}'`);
+  return checkType(return_value, expected_type, `return statement of function '${function_name}'`);
 }
 
 /* validate function parameter types */
@@ -101,15 +96,17 @@ export function checkParameterTypes(
   args: RuntimeValue[],
   params: Array<{ name: string; type_annotation?: string }>,
   function_name: string,
-): void {
+): Result<void> {
   for (let i = 0; i < params.length; i++) {
     const param = params[i];
     if (param.type_annotation) {
-      checkType(
+      const check_result = checkType(
         args[i],
         param.type_annotation,
         `parameter '${param.name}' of function '${function_name}'`,
       );
+      if (!check_result.ok) return check_result;
     }
   }
+  return ok(undefined);
 }

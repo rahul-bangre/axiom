@@ -1,21 +1,26 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate } from "@runtime";
+import { createGlobalEnv, evaluate, ValueType } from "@runtime";
+import type { ArrayValue, BooleanValue, NumberValue, RuntimeValue } from "@runtime";
 
-function run(source: string): any {
+function run(source: string): RuntimeValue {
   const tokenizer = new Tokenizer(source);
   const tokens = tokenizer.tokenize();
   const parser = new Parser(tokens);
   const ast = parser.parse();
   const env = createGlobalEnv();
-  return evaluate(ast, env);
+  const result = evaluate(ast, env);
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  return result.value;
 }
 
 Deno.test("Array - push adds element to end", () => {
-  const result = run("[1, 2].push(3)");
+  const result = run("[1, 2].push(3)") as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[2].value, 3);
+  assertEquals((result.elements[2] as NumberValue).value, 3);
 });
 
 Deno.test("Array - push returns new array", () => {
@@ -23,14 +28,14 @@ Deno.test("Array - push returns new array", () => {
     a = [1, 2]
     b = a.push(3)
     len(a)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 2);
 });
 
 Deno.test("Array - pop removes last element", () => {
-  const result = run("[1, 2, 3].pop()");
+  const result = run("[1, 2, 3].pop()") as ArrayValue;
   assertEquals(result.elements.length, 2);
-  assertEquals(result.elements[1].value, 2);
+  assertEquals((result.elements[1] as NumberValue).value, 2);
 });
 
 Deno.test("Array - pop on empty array throws", () => {
@@ -38,7 +43,7 @@ Deno.test("Array - pop on empty array throws", () => {
 });
 
 Deno.test("Array - first returns first element", () => {
-  const result = run("[10, 20, 30].first()");
+  const result = run("[10, 20, 30].first()") as NumberValue;
   assertEquals(result.value, 10);
 });
 
@@ -47,7 +52,7 @@ Deno.test("Array - first on empty array throws", () => {
 });
 
 Deno.test("Array - last returns last element", () => {
-  const result = run("[10, 20, 30].last()");
+  const result = run("[10, 20, 30].last()") as NumberValue;
   assertEquals(result.value, 30);
 });
 
@@ -56,35 +61,35 @@ Deno.test("Array - last on empty array throws", () => {
 });
 
 Deno.test("Array - slice extracts subarray", () => {
-  const result = run("[1, 2, 3, 4, 5].slice(1, 4)");
+  const result = run("[1, 2, 3, 4, 5].slice(1, 4)") as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 2);
-  assertEquals(result.elements[2].value, 4);
+  assertEquals((result.elements[0] as NumberValue).value, 2);
+  assertEquals((result.elements[2] as NumberValue).value, 4);
 });
 
 Deno.test("Array - slice with only start", () => {
-  const result = run("[1, 2, 3, 4, 5].slice(2)");
+  const result = run("[1, 2, 3, 4, 5].slice(2)") as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 3);
+  assertEquals((result.elements[0] as NumberValue).value, 3);
 });
 
 Deno.test("Array - concat combines arrays", () => {
-  const result = run("[1, 2].concat([3, 4])");
+  const result = run("[1, 2].concat([3, 4])") as ArrayValue;
   assertEquals(result.elements.length, 4);
-  assertEquals(result.elements[0].value, 1);
-  assertEquals(result.elements[3].value, 4);
+  assertEquals((result.elements[0] as NumberValue).value, 1);
+  assertEquals((result.elements[3] as NumberValue).value, 4);
 });
 
 Deno.test("Array - concat with empty array", () => {
-  const result = run("[1, 2].concat([])");
+  const result = run("[1, 2].concat([])") as ArrayValue;
   assertEquals(result.elements.length, 2);
 });
 
 Deno.test("Array - chaining operations", () => {
-  const result = run("[].push(1).push(2).push(3)");
+  const result = run("[].push(1).push(2).push(3)") as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 1);
-  assertEquals(result.elements[2].value, 3);
+  assertEquals((result.elements[0] as NumberValue).value, 1);
+  assertEquals((result.elements[2] as NumberValue).value, 3);
 });
 
 Deno.test("Array - immutability preserved", () => {
@@ -92,7 +97,7 @@ Deno.test("Array - immutability preserved", () => {
     original = [1, 2, 3]
     modified = original.push(4)
     len(original)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 3);
 });
 
@@ -109,10 +114,10 @@ Deno.test("Array - slice non-number index", () => {
 });
 
 Deno.test("Array - complex chaining", () => {
-  const result = run("[1, 2, 3].push(4).pop().concat([5, 6])");
+  const result = run("[1, 2, 3].push(4).pop().concat([5, 6])") as ArrayValue;
   assertEquals(result.elements.length, 5);
-  assertEquals(result.elements[0].value, 1);
-  assertEquals(result.elements[4].value, 6);
+  assertEquals((result.elements[0] as NumberValue).value, 1);
+  assertEquals((result.elements[4] as NumberValue).value, 6);
 });
 
 // Functional methods tests
@@ -121,11 +126,11 @@ Deno.test("Array - map transforms elements", () => {
   const result = run(`
     fn double(x) { return x * 2 }
     [1, 2, 3].map(double)
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 2);
-  assertEquals(result.elements[1].value, 4);
-  assertEquals(result.elements[2].value, 6);
+  assertEquals((result.elements[0] as NumberValue).value, 2);
+  assertEquals((result.elements[1] as NumberValue).value, 4);
+  assertEquals((result.elements[2] as NumberValue).value, 6);
 });
 
 Deno.test("Array - map with closure", () => {
@@ -133,39 +138,39 @@ Deno.test("Array - map with closure", () => {
     multiplier = 10
     fn multiply_by_const(x) { return x * multiplier }
     [1, 2, 3].map(multiply_by_const)
-  `);
-  assertEquals(result.elements[0].value, 10);
-  assertEquals(result.elements[1].value, 20);
-  assertEquals(result.elements[2].value, 30);
+  `) as ArrayValue;
+  assertEquals((result.elements[0] as NumberValue).value, 10);
+  assertEquals((result.elements[1] as NumberValue).value, 20);
+  assertEquals((result.elements[2] as NumberValue).value, 30);
 });
 
 Deno.test("Array - filter selects elements", () => {
   const result = run(`
     fn greater_than_two(x) { return x > 2 }
     [1, 2, 3, 4, 5].filter(greater_than_two)
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 3);
-  assertEquals(result.elements[1].value, 4);
-  assertEquals(result.elements[2].value, 5);
+  assertEquals((result.elements[0] as NumberValue).value, 3);
+  assertEquals((result.elements[1] as NumberValue).value, 4);
+  assertEquals((result.elements[2] as NumberValue).value, 5);
 });
 
 Deno.test("Array - filter with even numbers", () => {
   const result = run(`
     fn is_even(x) { return x % 2 == 0 }
     [1, 2, 3, 4, 5, 6].filter(is_even)
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 2);
-  assertEquals(result.elements[1].value, 4);
-  assertEquals(result.elements[2].value, 6);
+  assertEquals((result.elements[0] as NumberValue).value, 2);
+  assertEquals((result.elements[1] as NumberValue).value, 4);
+  assertEquals((result.elements[2] as NumberValue).value, 6);
 });
 
 Deno.test("Array - reduce accumulates values", () => {
   const result = run(`
     fn add(acc, x) { return acc + x }
     [1, 2, 3, 4].reduce(add, 0)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 10);
 });
 
@@ -173,7 +178,7 @@ Deno.test("Array - reduce with multiplication", () => {
   const result = run(`
     fn multiply(acc, x) { return acc * x }
     [2, 3, 4].reduce(multiply, 1)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 24);
 });
 
@@ -181,24 +186,24 @@ Deno.test("Array - reduce builds array", () => {
   const result = run(`
     fn push_double(acc, x) { return acc.push(x * 2) }
     [1, 2, 3].reduce(push_double, [])
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 3);
-  assertEquals(result.elements[0].value, 2);
-  assertEquals(result.elements[2].value, 6);
+  assertEquals((result.elements[0] as NumberValue).value, 2);
+  assertEquals((result.elements[2] as NumberValue).value, 6);
 });
 
 Deno.test("Array - forEach executes side effects", () => {
   const result = run(`
     [1, 2, 3].forEach(print)
   `);
-  assertEquals(result.type, 3);
+  assertEquals(result.type, ValueType.NULL);
 });
 
 Deno.test("Array - find returns first match", () => {
   const result = run(`
     fn greater_than_three(x) { return x > 3 }
     [1, 2, 3, 4, 5].find(greater_than_three)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 4);
 });
 
@@ -207,14 +212,14 @@ Deno.test("Array - find returns null if not found", () => {
     fn greater_than_ten(x) { return x > 10 }
     [1, 2, 3].find(greater_than_ten)
   `);
-  assertEquals(result.type, 3);
+  assertEquals(result.type, ValueType.NULL);
 });
 
 Deno.test("Array - findIndex returns index of first match", () => {
   const result = run(`
     fn greater_than_three(x) { return x > 3 }
     [1, 2, 3, 4, 5].findIndex(greater_than_three)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 3);
 });
 
@@ -222,7 +227,7 @@ Deno.test("Array - findIndex returns -1 if not found", () => {
   const result = run(`
     fn greater_than_ten(x) { return x > 10 }
     [1, 2, 3].findIndex(greater_than_ten)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, -1);
 });
 
@@ -230,7 +235,7 @@ Deno.test("Array - some returns true if any match", () => {
   const result = run(`
     fn greater_than_three(x) { return x > 3 }
     [1, 2, 3, 4].some(greater_than_three)
-  `);
+  `) as BooleanValue;
   assertEquals(result.value, true);
 });
 
@@ -238,7 +243,7 @@ Deno.test("Array - some returns false if none match", () => {
   const result = run(`
     fn greater_than_ten(x) { return x > 10 }
     [1, 2, 3].some(greater_than_ten)
-  `);
+  `) as BooleanValue;
   assertEquals(result.value, false);
 });
 
@@ -246,7 +251,7 @@ Deno.test("Array - every returns true if all match", () => {
   const result = run(`
     fn is_even(x) { return x % 2 == 0 }
     [2, 4, 6, 8].every(is_even)
-  `);
+  `) as BooleanValue;
   assertEquals(result.value, true);
 });
 
@@ -254,7 +259,7 @@ Deno.test("Array - every returns false if any don't match", () => {
   const result = run(`
     fn is_even(x) { return x % 2 == 0 }
     [2, 3, 4, 6].every(is_even)
-  `);
+  `) as BooleanValue;
   assertEquals(result.value, false);
 });
 
@@ -262,12 +267,12 @@ Deno.test("Array - flatMap flattens and maps", () => {
   const result = run(`
     fn duplicate(x) { return [x, x * 2] }
     [1, 2, 3].flatMap(duplicate)
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 6);
-  assertEquals(result.elements[0].value, 1);
-  assertEquals(result.elements[1].value, 2);
-  assertEquals(result.elements[2].value, 2);
-  assertEquals(result.elements[3].value, 4);
+  assertEquals((result.elements[0] as NumberValue).value, 1);
+  assertEquals((result.elements[1] as NumberValue).value, 2);
+  assertEquals((result.elements[2] as NumberValue).value, 2);
+  assertEquals((result.elements[3] as NumberValue).value, 4);
 });
 
 Deno.test("Array - flatMap with conditional arrays", () => {
@@ -279,11 +284,11 @@ Deno.test("Array - flatMap with conditional arrays", () => {
       return [x]
     }
     [1, 2, 3, 4].flatMap(maybe_double)
-  `);
+  `) as ArrayValue;
   assertEquals(result.elements.length, 6);
-  assertEquals(result.elements[0].value, 1);
-  assertEquals(result.elements[1].value, 2);
-  assertEquals(result.elements[2].value, 2);
+  assertEquals((result.elements[0] as NumberValue).value, 1);
+  assertEquals((result.elements[1] as NumberValue).value, 2);
+  assertEquals((result.elements[2] as NumberValue).value, 2);
 });
 
 Deno.test("Array - chaining functional methods", () => {
@@ -295,7 +300,7 @@ Deno.test("Array - chaining functional methods", () => {
       .filter(is_even)
       .map(square)
       .reduce(add, 0)
-  `);
+  `) as NumberValue;
   assertEquals(result.value, 20);
 });
 
