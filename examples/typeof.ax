@@ -1,0 +1,79 @@
+/* typeof operator showcase - runtime type introspection */
+
+// basic types
+print("Number:", typeof 42)
+print("String:", typeof "hello")
+print("Boolean:", typeof true)
+print("Null:", typeof null)
+
+// data structures
+print("Array:", typeof [1, 2, 3])
+print("Object:", typeof {x: 1, y: 2})
+
+// functions
+fn myFunc() { return 1 }
+print("Function:", typeof myFunc)
+
+lambda = x => x * 2
+print("Lambda:", typeof lambda)
+
+// expressions
+print("Expression (5 + 3):", typeof (5 + 3))
+print("Expression (true && false):", typeof (true && false))
+
+// type-based conditional logic
+fn describeType(value) {
+  type_name = typeof value
+  return type_name == "number" ? "numeric value"
+    : type_name == "string" ? "text value"
+    : type_name == "boolean" ? "truth value"
+    : type_name == "array" ? "collection"
+    : type_name == "object" ? "structured data"
+    : type_name == "function" ? "callable"
+    : "unknown type"
+}
+
+print("\nDescribe 42:", describeType(42))
+print("Describe 'test':", describeType("test"))
+print("Describe [1,2,3]:", describeType([1, 2, 3]))
+print("Describe myFunc:", describeType(myFunc))
+
+// type checking in practice
+fn safeAdd(a, b) {
+  if (typeof a != "number") {
+    print("Error: first argument must be a number")
+    return null
+  }
+  if (typeof b != "number") {
+    print("Error: second argument must be a number")
+    return null
+  }
+  return a + b
+}
+
+print("\nsafeAdd(5, 10):", safeAdd(5, 10))
+print("safeAdd(5, 'hello'):", safeAdd(5, "hello"))
+
+// dynamic dispatch based on type
+fn process(value) {
+  type_name = typeof value
+  
+  if (type_name == "number") {
+    return value * 2
+  }
+  
+  if (type_name == "string") {
+    return value + "!"
+  }
+  
+  if (type_name == "array") {
+    return value.map(x => x * 2)
+  }
+  
+  return null
+}
+
+print("\nprocess(10):", process(10))
+print("process('hello'):", process("hello"))
+print("process([1, 2, 3]):", process([1, 2, 3]))
+

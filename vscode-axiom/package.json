@@ -1,0 +1,46 @@
+{
+  "name": "axiom",
+  "displayName": "Axiom",
+  "description": "Syntax highlighting for the Axiom programming language",
+  "version": "0.1.0",
+  "publisher": "axiom-lang",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/axiom"
+  },
+  "keywords": [
+    "axiom",
+    "programming language",
+    "functional programming",
+    "syntax highlighting"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "axiom",
+        "aliases": ["Axiom", "axiom"],
+        "extensions": [".ax"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icon.png",
+          "dark": "./icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "axiom",
+        "scopeName": "source.axiom",
+        "path": "./syntaxes/axiom.tmLanguage.json"
+      }
+    ]
+  }
+}
+
+
