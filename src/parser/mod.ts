@@ -1,3 +1,2 @@
 export * from "./ast.ts";
-export * from "./parser.ts";
-
+export { Parser, ParserError } from "./parser.ts";

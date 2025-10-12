@@ -30,7 +30,7 @@ repl:
 
 test: ARGS =
 test:
-	@deno test --allow-read tests/*-test.ts $(ARGS)
+	@deno test --allow-read tests/*.test.ts $(ARGS)
 
 clean:
 	@find . -name ".DS_Store" -delete
