@@ -416,3 +416,143 @@ Deno.test("Schema - method chaining validation fails", () => {
   assertEquals(result.ok, false);
   if (!result.ok) assertEquals(result.error.includes("at least 10"), true);
 });
+
+// ========== extend() tests ==========
+
+Deno.test("Schema - extend basic object", () => {
+  const result = run(`
+    BaseUser = schema.object({
+      name: schema.string(),
+      email: schema.string()
+    })
+    
+    AdminUser = BaseUser.extend({
+      role: schema.string(),
+      isAdmin: schema.boolean()
+    })
+    
+    admin = {
+      name: "Alice",
+      email: "alice@example.com",
+      role: "admin",
+      isAdmin: true
+    }
+    
+    AdminUser.parse(admin)
+  `);
+  assertEquals(result.ok, true);
+  if (result.ok) {
+    const obj = result.value as any;
+    assertEquals(obj.properties.get("name").value, "Alice");
+    assertEquals(obj.properties.get("role").value, "admin");
+  }
+});
+
+Deno.test("Schema - extend fails on missing base field", () => {
+  const result = run(`
+    BaseUser = schema.object({
+      name: schema.string(),
+      email: schema.string()
+    })
+    
+    AdminUser = BaseUser.extend({
+      role: schema.string()
+    })
+    
+    admin = {
+      name: "Alice",
+      role: "admin"
+    }
+    
+    AdminUser.parse(admin)
+  `);
+  assertEquals(result.ok, false);
+  if (!result.ok) assertEquals(result.error.includes("email"), true);
+});
+
+Deno.test("Schema - extend fails on missing extended field", () => {
+  const result = run(`
+    BaseUser = schema.object({
+      name: schema.string()
+    })
+    
+    AdminUser = BaseUser.extend({
+      role: schema.string()
+    })
+    
+    admin = {
+      name: "Alice"
+    }
+    
+    AdminUser.parse(admin)
+  `);
+  assertEquals(result.ok, false);
+  if (!result.ok) assertEquals(result.error.includes("role"), true);
+});
+
+Deno.test("Schema - extend can be chained multiple times", () => {
+  const result = run(`
+    Base = schema.object({
+      id: schema.number()
+    })
+    
+    WithName = Base.extend({
+      name: schema.string()
+    })
+    
+    WithEmail = WithName.extend({
+      email: schema.string()
+    })
+    
+    obj = {
+      id: 1,
+      name: "Alice",
+      email: "alice@example.com"
+    }
+    
+    WithEmail.parse(obj)
+  `);
+  assertEquals(result.ok, true);
+});
+
+Deno.test("Schema - extend with optional fields", () => {
+  const result = run(`
+    Base = schema.object({
+      name: schema.string()
+    })
+    
+    Extended = Base.extend({
+      age: schema.optional(schema.number())
+    })
+    
+    obj = {
+      name: "Alice"
+    }
+    
+    Extended.parse(obj)
+  `);
+  assertEquals(result.ok, true);
+});
+
+Deno.test("Schema - extend can override parent field", () => {
+  const result = run(`
+    Base = schema.object({
+      value: schema.string()
+    })
+    
+    Extended = Base.extend({
+      value: schema.number()
+    })
+    
+    obj = {
+      value: 42
+    }
+    
+    Extended.parse(obj)
+  `);
+  assertEquals(result.ok, true);
+  if (result.ok) {
+    const obj_val = result.value as any;
+    assertEquals(obj_val.properties.get("value").value, 42);
+  }
+});

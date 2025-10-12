@@ -143,6 +143,14 @@ class ObjectSchema extends SchemaBuilder {
 
     return super.validate(value);
   }
+
+  extend(additional_shape: Map<string, SchemaBuilder>): ObjectSchema {
+    const merged = new Map(this.shape);
+    for (const [key, schema] of additional_shape.entries()) {
+      merged.set(key, schema);
+    }
+    return new ObjectSchema(merged);
+  }
 }
 
 class ArraySchema extends SchemaBuilder {
@@ -364,6 +372,7 @@ const schema_object: NativeFunctionValue = {
       type: ValueType.OBJECT,
       properties: new Map([
         ["parse", createParseFunction(builder)],
+        ["extend", createObjectExtendFunction(builder)],
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
@@ -633,6 +642,44 @@ function createArrayMaxFunction(builder: ArraySchema): NativeFunctionValue {
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
       return ok(builder_obj);
+    },
+  };
+}
+
+function createObjectExtendFunction(builder: ObjectSchema): NativeFunctionValue {
+  return {
+    type: ValueType.NATIVE_FUNCTION,
+    name: "extend",
+    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+      if (args.length !== 1 || args[0].type !== ValueType.OBJECT) {
+        return runtimeError("extend() requires an object argument");
+      }
+
+      const extension_obj = args[0] as ObjectValue;
+      const additional_shape = new Map<string, SchemaBuilder>();
+
+      for (const [key, val] of extension_obj.properties.entries()) {
+        if (val.type !== ValueType.OBJECT) {
+          return runtimeError(`Invalid schema for property '${key}'`);
+        }
+        const schema_obj = val as ObjectValue;
+        const schema_builder = (schema_obj as unknown as Record<string, unknown>)
+          ._builder as SchemaBuilder;
+        if (schema_builder) {
+          additional_shape.set(key, schema_builder);
+        }
+      }
+
+      const extended_builder = builder.extend(additional_shape);
+      const extended_obj: ObjectValue = {
+        type: ValueType.OBJECT,
+        properties: new Map([
+          ["parse", createParseFunction(extended_builder)],
+          ["extend", createObjectExtendFunction(extended_builder)],
+        ]),
+      };
+      (extended_obj as unknown as Record<string, unknown>)._builder = extended_builder;
+      return ok(extended_obj);
     },
   };
 }
