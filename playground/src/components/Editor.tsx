@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import MonacoEditor from "@monaco-editor/react";
+import { initVimMode } from "monaco-vim";
 
 interface EditorProps {
   value: string;
@@ -9,6 +10,13 @@ interface EditorProps {
 
 export function Editor({ value, onChange, onRun }: EditorProps) {
   const editorRef = useRef<any>(null);
+  const vimModeRef = useRef<any>(null);
+  const [vimEnabled, setVimEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("axiom-vim-mode") === "true";
+    }
+    return false;
+  });
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
@@ -232,47 +240,122 @@ export function Editor({ value, onChange, onRun }: EditorProps) {
       onRun();
     });
 
+    // Initialize vim mode if enabled
+    if (vimEnabled) {
+      const statusNode = document.getElementById("vim-status");
+      if (statusNode) {
+        vimModeRef.current = initVimMode(editor, statusNode);
+      }
+    }
+
     // Focus editor
     editor.focus();
   };
 
+  const toggleVimMode = () => {
+    if (!editorRef.current) return;
+
+    const newState = !vimEnabled;
+    setVimEnabled(newState);
+    localStorage.setItem("axiom-vim-mode", String(newState));
+
+    if (newState) {
+      const statusNode = document.getElementById("vim-status");
+      if (statusNode) {
+        vimModeRef.current = initVimMode(editorRef.current, statusNode);
+      }
+    } else {
+      if (vimModeRef.current) {
+        vimModeRef.current.dispose();
+        vimModeRef.current = null;
+      }
+    }
+  };
+
   return (
-    <MonacoEditor
-      height="100%"
-      language="axiom"
-      theme="axiom-nova"
-      value={value}
-      onChange={(value) => onChange(value || "")}
-      onMount={handleEditorDidMount}
-      options={{
-        fontSize: 14,
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        automaticLayout: true,
-        tabSize: 2,
-        insertSpaces: true,
-        wordWrap: "on",
-        lineNumbers: "on",
-        glyphMargin: false,
-        folding: true,
-        lineDecorationsWidth: 10,
-        lineNumbersMinChars: 3,
-        renderLineHighlight: "all",
-        autoIndent: "full",
-        formatOnPaste: true,
-        formatOnType: true,
-        scrollbar: {
-          vertical: "visible",
-          horizontal: "visible",
-          useShadows: false,
-        },
-        autoClosingBrackets: "always",
-        autoClosingQuotes: "always",
-        matchBrackets: "always",
-        bracketPairColorization: {
-          enabled: false,
-        },
-      }}
-    />
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          padding: "8px",
+          background: "#1e1e1e",
+          borderBottom: "1px solid #3e3e3e",
+        }}
+      >
+        <button
+          onClick={toggleVimMode}
+          style={{
+            padding: "4px 12px",
+            background: vimEnabled ? "#0e639c" : "#333",
+            color: "#fff",
+            border: "none",
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "12px",
+            fontFamily: "monospace",
+          }}
+        >
+          {vimEnabled ? "VIM: ON" : "VIM: OFF"}
+        </button>
+      </div>
+      <div style={{ position: "relative", flex: 1 }}>
+        {vimEnabled && (
+          <div
+            id="vim-status"
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              background: "#1e1e1e",
+              color: "#d4d4d4",
+              padding: "4px 12px",
+              fontFamily: "monospace",
+              fontSize: "12px",
+              borderTop: "1px solid #3e3e3e",
+              zIndex: 10,
+              minWidth: "200px",
+            }}
+          />
+        )}
+        <MonacoEditor
+          height="100%"
+          language="axiom"
+          theme="axiom-nova"
+          value={value}
+          onChange={(value) => onChange(value || "")}
+          onMount={handleEditorDidMount}
+          options={{
+            fontSize: 14,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            tabSize: 2,
+            insertSpaces: true,
+            wordWrap: "on",
+            lineNumbers: "on",
+            glyphMargin: false,
+            folding: true,
+            lineDecorationsWidth: 10,
+            lineNumbersMinChars: 3,
+            renderLineHighlight: "all",
+            autoIndent: "full",
+            formatOnPaste: true,
+            formatOnType: true,
+            scrollbar: {
+              vertical: "visible",
+              horizontal: "visible",
+              useShadows: false,
+            },
+            autoClosingBrackets: "always",
+            autoClosingQuotes: "always",
+            matchBrackets: "always",
+            bracketPairColorization: {
+              enabled: false,
+            },
+          }}
+        />
+      </div>
+    </div>
   );
 }
