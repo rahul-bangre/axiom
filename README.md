@@ -10,7 +10,7 @@ A minimal, typed, functional language built on immutable truth.
 - ⚡ **Clean syntax** - no semicolons, minimal keywords
 - 🚀 **Fast execution** - built with Deno + TypeScript
 - 🔄 **Async/Await** - asynchronous computations as values
-- ✨ **Rich standard library** - array methods, string methods, schema validation, HTTP client
+- ✨ **Rich standard library** - arrays, strings, sets, maps, schema validation, HTTP client
 - 🌐 **Web playground** - interactive browser-based editor
 
 ## Philosophy
@@ -288,6 +288,48 @@ if (response.status >= 400) {
 - `padStart(length, char?)` - pad start
 - `padEnd(length, char?)` - pad end
 
+### Set
+
+Efficient immutable set data structure (O(1) lookups with HAMT):
+
+- `set()` - create empty set
+- `set([...])` - create from array
+- `.add(value)` - returns new set with value added
+- `.delete(value)` - returns new set with value removed
+- `.has(value)` - check if value exists (returns boolean)
+- `.size()` - get number of elements
+- `.union(other_set)` - combine two sets
+- `.intersection(other_set)` - common elements
+- `.difference(other_set)` - elements in first but not second
+- `.toArray()` - convert to array
+
+```axiom
+tags = set(["javascript", "python", "rust"])
+tags2 = tags.add("go")         // [javascript, python, rust, go]
+has_rust = tags2.has("rust")   // true
+```
+
+### Map
+
+Efficient immutable key-value map (O(1) lookups with HAMT):
+
+- `map()` - create empty map
+- `map({...})` - create from object
+- `.set(key, value)` - returns new map with key-value pair
+- `.get(key)` - get value for key (returns null if missing)
+- `.delete(key)` - returns new map with key removed
+- `.has(key)` - check if key exists (returns boolean)
+- `.size()` - get number of entries
+- `.keys()` - array of all keys
+- `.values()` - array of all values
+- `.entries()` - array of [key, value] pairs
+
+```axiom
+cache = map({user_1: "Alice", user_2: "Bob"})
+cache2 = cache.set("user_3", "Carol")
+user = cache2.get("user_1")    // "Alice"
+```
+
 ### JSON
 
 - `json.parse(string)` - parse JSON string
@@ -322,7 +364,7 @@ All HTTP methods return `async Result<Response>` where:
 ## Development
 
 ```bash
-# run tests (320 tests)
+# run tests (417 tests)
 make test
 
 # type check
@@ -343,11 +385,10 @@ axiom/
 │   ├── lexer/          # tokenization
 │   ├── parser/         # AST generation
 │   ├── runtime/        # evaluation & environment
-│   ├── std/            # standard library (array, string, schema, json)
+│   ├── std/            # standard library (array, string, set, map, schema, json, http)
 │   ├── types/          # type checker & Result<T>
-│   ├── repl/           # REPL (coming soon)
 │   └── cli.ts          # CLI entrypoint
-├── tests/              # test suites (320 tests)
+├── tests/              # test suites (417 tests)
 ├── examples/           # example programs
 ├── playground/         # web-based interactive playground
 ├── axiom-vscode/       # VSCode syntax highlighting extension
@@ -361,6 +402,8 @@ See the `examples/` directory:
 - `leetcode.ax` - LeetCode problem solutions
 - `async-demo.ax` - async/await demonstration
 - `http-demo.ax` - HTTP client with full CRUD operations
+- `set-demo.ax` - Set data structure with use cases
+- `map-demo.ax` - Map data structure with use cases
 - `match-demo.ax` - pattern matching examples
 - `modules/` - module system demonstration
 - `graph-algorithms/` - graph traversal and pathfinding algorithms
@@ -445,6 +488,7 @@ result = user_schema.parse({name: 42})
 - [x] Core language features
 - [x] Functional programming (lambdas, closures, recursion)
 - [x] Array & string standard library
+- [x] Persistent data structures (Set, Map with HAMT)
 - [x] Schema validation
 - [x] Async/await
 - [x] Web playground

@@ -1,0 +1,169 @@
+print("=== Map Data Structure Demo ===")
+print("")
+
+print("--- Creating Maps ---")
+users = map({alice: 25, bob: 30, carol: 28})
+print("Users size:", users.size())
+
+print("")
+print("--- Getting Values ---")
+print("Alice's age:", users.get("alice"))
+print("Bob's age:", users.get("bob"))
+print("Missing key:", users.get("dave"))
+
+print("")
+print("--- Setting Values (immutable) ---")
+users2 = users.set("dave", 35)
+print("After adding dave:", users2.size())
+print("Original unchanged:", users.size())
+
+print("")
+print("--- Updating Values ---")
+users3 = users.set("alice", 26)
+print("Alice's new age:", users3.get("alice"))
+print("Original Alice:", users.get("alice"))
+
+print("")
+print("--- Checking Keys ---")
+print("Has bob?", users.has("bob"))
+print("Has dave?", users.has("dave"))
+
+print("")
+print("--- Removing Entries ---")
+users4 = users.delete("bob")
+print("After delete bob:", users4.size())
+print("Has bob?", users4.has("bob"))
+
+print("")
+print("--- Iterating Keys, Values, Entries ---")
+sample = map({x: 1, y: 2, z: 3})
+
+print("Keys:", sample.keys())
+print("Values:", sample.values())
+
+entries = sample.entries()
+print("Entries count:", len(entries))
+first_entry = entries[0]
+print("First entry:", first_entry)
+
+print("")
+print("--- Working with Number Keys ---")
+scores = map()
+  .set(1, "gold")
+  .set(2, "silver")
+  .set(3, "bronze")
+
+print("First place:", scores.get(1))
+print("Second place:", scores.get(2))
+
+print("")
+print("--- Chaining Operations ---")
+config = map({debug: false, port: 3000})
+  .set("host", "localhost")
+  .set("timeout", 5000)
+  .delete("debug")
+
+print("Final config size:", config.size())
+print("Config port:", config.get("port"))
+print("Config host:", config.get("host"))
+
+print("")
+print("--- Use Case: Caching ---")
+initial_cache = map()
+
+fn getCached(key, cache_map, compute_fn) {
+  if (cache_map.has(key)) {
+    print("  Cache hit:", key)
+    return {value: cache_map.get(key), cache: cache_map}
+  }
+  print("  Cache miss:", key)
+  result = compute_fn(key)
+  return {value: result, cache: cache_map.set(key, result)}
+}
+
+fn expensiveCompute(x) {
+  return x * x
+}
+
+result1 = getCached(5, initial_cache, expensiveCompute)
+print("5^2 =", result1.value)
+
+result2 = getCached(5, result1.cache, expensiveCompute)
+print("5^2 =", result2.value)
+
+result3 = getCached(10, result2.cache, expensiveCompute)
+print("10^2 =", result3.value)
+
+print("Cache size:", result3.cache.size())
+
+print("")
+print("--- Use Case: Counting Occurrences ---")
+words = ["hello", "world", "hello", "axiom", "world", "hello"]
+
+fn countWords(word_list) {
+  fn helper(i, counts) {
+    if (i >= len(word_list)) {
+      return counts
+    }
+    
+    word = word_list[i]
+    current = counts.get(word)
+    new_count = current ? current + 1 : 1
+    
+    return helper(i + 1, counts.set(word, new_count))
+  }
+  
+  return helper(0, map())
+}
+
+word_counts = countWords(words)
+print("Word counts:")
+print("  hello:", word_counts.get("hello"))
+print("  world:", word_counts.get("world"))
+print("  axiom:", word_counts.get("axiom"))
+
+print("")
+print("--- Use Case: Configuration Management ---")
+default_config = map({
+  host: "localhost",
+  port: 8080,
+  debug: false,
+  timeout: 30
+})
+
+user_config = map({
+  port: 3000,
+  debug: true
+})
+
+fn mergeConfig(defaults, overrides) {
+  fn processKeys(keys_list, i, result) {
+    if (i >= len(keys_list)) {
+      return result
+    }
+    
+    key = keys_list[i]
+    value = overrides.get(key)
+    
+    return processKeys(keys_list, i + 1, result.set(key, value))
+  }
+  
+  override_keys = overrides.keys()
+  return processKeys(override_keys, 0, defaults)
+}
+
+final_config = mergeConfig(default_config, user_config)
+print("Merged config:")
+print("  host:", final_config.get("host"))
+print("  port:", final_config.get("port"))
+print("  debug:", final_config.get("debug"))
+print("  timeout:", final_config.get("timeout"))
+
+print("")
+print("=== Summary ===")
+print("✓ Maps store key-value pairs")
+print("✓ O(1) lookups with HAMT implementation")
+print("✓ Immutable operations return new maps")
+print("✓ Supports any value as key (number, string, etc)")
+print("✓ Perfect for caching, config, counting, indexing")
+

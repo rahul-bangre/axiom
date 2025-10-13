@@ -3,6 +3,8 @@ import leetcodeRaw from "../../../examples/leetcode.ax?raw";
 import asyncDemoRaw from "../../../examples/async-demo.ax?raw";
 import matchDemoRaw from "../../../examples/match-demo.ax?raw";
 import httpDemoRaw from "../../../examples/http-demo.ax?raw";
+import setDemoRaw from "../../../examples/set-demo.ax?raw";
+import mapDemoRaw from "../../../examples/map-demo.ax?raw";
 
 // Module examples
 import moduleMainRaw from "../../../examples/modules/main.ax?raw";
@@ -210,6 +212,14 @@ fizzbuzz(20)`,
   {
     name: "HTTP Client",
     code: httpDemoRaw,
+  },
+  {
+    name: "Set Data Structure",
+    code: setDemoRaw,
+  },
+  {
+    name: "Map Data Structure",
+    code: mapDemoRaw,
   },
   {
     name: "Pattern Matching",

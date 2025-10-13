@@ -1,36 +1,35 @@
 use "./graph.ax" exposing { get_neighbors }
 
 export fn bfs(graph, start, visit_fn) {
-  visited = []
+  visited = set()
   queue = [start]
   order = []
-  
+
   fn process_queue(q, vis, ord) {
     if (len(q) == 0) {
       return ord
     }
-    
+
     current = q[0]
     rest_queue = q.slice(1, len(q))
-    
-    already_visited = vis.some((v) => v == current)
-    if (already_visited) {
+
+    if (vis.has(current)) {
       return process_queue(rest_queue, vis, ord)
     }
-    
+
     visit_fn(current)
-    
-    new_visited = vis.concat([current])
+
+    new_visited = vis.add(current)
     new_order = ord.concat([current])
-    
+
     neighbors = get_neighbors(graph, current)
     neighbor_nodes = neighbors.map((edge) => edge.to)
-    
+
     new_queue = rest_queue.concat(neighbor_nodes)
-    
+
     return process_queue(new_queue, new_visited, new_order)
   }
-  
+
   return process_queue(queue, visited, order)
 }
 

@@ -1,0 +1,102 @@
+print("=== Set Data Structure Demo ===")
+print("")
+
+print("--- Creating Sets ---")
+nums = set([1, 2, 3, 4, 5])
+print("nums:", nums.toArray())
+print("size:", nums.size())
+
+print("")
+print("--- Adding Elements (immutable) ---")
+nums2 = nums.add(6)
+print("After add(6):", nums2.toArray())
+print("Original unchanged:", nums.toArray())
+
+print("")
+print("--- Duplicate Handling ---")
+nums3 = nums.add(3)
+print("After add(3) again:", nums3.toArray())
+print("Size still:", nums3.size())
+
+print("")
+print("--- Checking Membership ---")
+print("Has 3?", nums.has(3))
+print("Has 10?", nums.has(10))
+
+print("")
+print("--- Removing Elements ---")
+nums4 = nums.delete(3)
+print("After delete(3):", nums4.toArray())
+print("Has 3?", nums4.has(3))
+
+print("")
+print("--- Set Operations ---")
+evens = set([2, 4, 6, 8])
+odds = set([1, 3, 5, 7])
+
+all_nums = evens.union(odds)
+print("Union:", all_nums.toArray())
+
+both = set([1, 2, 3]).intersection(set([2, 3, 4]))
+print("Intersection [1,2,3] & [2,3,4]:", both.toArray())
+
+diff = set([1, 2, 3, 4]).difference(set([3, 4, 5]))
+print("Difference [1,2,3,4] - [3,4,5]:", diff.toArray())
+
+print("")
+print("--- Working with Strings ---")
+tags = set(["javascript", "python", "rust"])
+tags2 = tags.add("go").add("typescript")
+print("Tags:", tags2.toArray())
+
+print("")
+print("--- Chaining Operations ---")
+result = set([1, 2, 3])
+  .add(4)
+  .add(5)
+  .delete(2)
+  .add(6)
+
+print("Chained result:", result.toArray())
+print("Final size:", result.size())
+
+print("")
+print("--- Use Case: Unique Visitor Tracking ---")
+initial_visitors = set()
+
+fn trackVisitor(ip, current_visitors) {
+  if (current_visitors.has(ip)) {
+    print("  Return visitor:", ip)
+    return current_visitors
+  }
+  print("  New visitor:", ip)
+  return current_visitors.add(ip)
+}
+
+v1 = trackVisitor("192.168.1.1", initial_visitors)
+v2 = trackVisitor("192.168.1.2", v1)
+v3 = trackVisitor("192.168.1.1", v2)
+final_visitors = trackVisitor("192.168.1.3", v3)
+
+print("Total unique visitors:", final_visitors.size())
+
+print("")
+print("--- Use Case: Permission System ---")
+admin_perms = set(["read", "write", "delete", "admin"])
+mod_perms = set(["read", "write", "moderate"])
+user_perms = set(["read"])
+
+print("Admin has delete?", admin_perms.has("delete"))
+print("User has delete?", user_perms.has("delete"))
+
+common_perms = admin_perms.intersection(mod_perms)
+print("Admin & Mod common:", common_perms.toArray())
+
+print("")
+print("=== Summary ===")
+print("✓ Sets store unique values")
+print("✓ O(1) lookups with HAMT implementation")
+print("✓ Immutable operations return new sets")
+print("✓ Union, intersection, difference operations")
+print("✓ Perfect for tracking unique items, permissions, tags")
+

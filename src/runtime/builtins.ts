@@ -2,6 +2,8 @@ import { ok, runtimeError } from "../types/result.ts";
 import { json_parse, json_stringify } from "../std/json.ts";
 import { schema_namespace } from "../std/schema.ts";
 import { createHttpNamespace } from "../std/http.ts";
+import { set_constructor } from "../std/set.ts";
+import { map_constructor } from "../std/map.ts";
 import { Environment } from "./environment.ts";
 import { NativeFunctionValue, ObjectValue, RuntimeValue, ValueType } from "./value.ts";
 
@@ -85,6 +87,8 @@ export function createGlobalEnv(): Environment {
 
   global_env.define("schema", schema_namespace);
   global_env.define("http", createHttpNamespace());
+  global_env.define("set", set_constructor);
+  global_env.define("map", map_constructor);
 
   return global_env;
 }

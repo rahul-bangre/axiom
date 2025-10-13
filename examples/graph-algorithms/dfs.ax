@@ -1,72 +1,73 @@
 use "./graph.ax" exposing { get_neighbors }
 
 export fn dfs(graph, start, visit_fn) {
-  visited = []
-  
-  fn visit(node, vis) {
-    already_visited = vis.some((v) => v == node)
-    if (already_visited) {
-      return vis
+  visited = set()
+  order = []
+
+  fn visit(node, vis, ord) {
+    if (vis.has(node)) {
+      return { visited: vis, order: ord }
     }
-    
+
     visit_fn(node)
-    
-    new_visited = vis.concat([node])
+
+    new_visited = vis.add(node)
+    new_order = ord.concat([node])
     neighbors = get_neighbors(graph, node)
-    
-    fn process_neighbors(i, v) {
+
+    fn process_neighbors(i, v, o) {
       if (i >= len(neighbors)) {
-        return v
+        return { visited: v, order: o }
       }
-      
+
       neighbor = neighbors[i].to
-      updated_visited = visit(neighbor, v)
-      
-      return process_neighbors(i + 1, updated_visited)
+      result = visit(neighbor, v, o)
+
+      return process_neighbors(i + 1, result.visited, result.order)
     }
-    
-    return process_neighbors(0, new_visited)
+
+    return process_neighbors(0, new_visited, new_order)
   }
-  
-  return visit(start, visited)
+
+  result = visit(start, visited, order)
+  return result.order
 }
 
 export fn dfs_path(graph, start, end, visit_fn) {
   fn find_path(node, target, visited, path) {
-    already_visited = visited.some((v) => v == node)
-    if (already_visited) {
+    if (visited.has(node)) {
       return null
     }
-    
+
     visit_fn(node)
-    
-    new_visited = visited.concat([node])
+
+    new_visited = visited.add(node)
     new_path = path.concat([node])
-    
+
     if (node == target) {
       return new_path
     }
-    
+
     neighbors = get_neighbors(graph, node)
-    
+
     fn try_neighbors(i) {
       if (i >= len(neighbors)) {
         return null
       }
-      
+
       neighbor = neighbors[i].to
       result = find_path(neighbor, target, new_visited, new_path)
-      
+
       if (result != null) {
         return result
       }
-      
+
       return try_neighbors(i + 1)
     }
-    
+
     return try_neighbors(0)
   }
-  
-  return find_path(start, end, [], [])
+
+  return find_path(start, end, set(), [])
 }
 
