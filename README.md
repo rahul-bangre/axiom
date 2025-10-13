@@ -162,6 +162,36 @@ fn get_header(req) {
 auth = get_header(null)  // null instead of error
 ```
 
+### Nullish Coalescing
+
+```axiom
+// Return right side only if left is null
+name = user?.name ?? "Guest"      // Defaults to "Guest" if null
+port = config?.port ?? 8080        // Defaults to 8080
+
+// Different from || - only checks null, not falsy
+count = 0 ?? 10                    // 0 (zero is not null)
+enabled = false ?? true            // false (false is not null)
+text = "" ?? "default"             // "" (empty string is not null)
+
+// Multiple fallbacks
+value = primary ?? secondary ?? default_value
+
+// Combining with optional chaining
+display = user?.profile?.name ?? user?.username ?? "Anonymous"
+port = config?.server?.port ?? config?.defaultPort ?? 3000
+
+// In functions
+fn get_config(env) {
+  host = env?.database?.host ?? "localhost"
+  port = env?.database?.port ?? 5432
+  return host + ":" + port
+}
+
+// With ternary
+permission = (role?.name ?? "guest") == "admin" ? "full" : "limited"
+```
+
 ### Collections
 
 ```axiom
@@ -345,6 +375,7 @@ http.server(8000, config)
 ### Operators
 
 - `?.` - optional chaining (safe property access, returns `null` if not found)
+- `??` - nullish coalescing (default value for `null`, doesn't treat `0`/`false`/`""` as null)
 - `?:` - ternary operator (conditional expression)
 
 ### Array Methods
@@ -629,7 +660,7 @@ result = user_schema.parse({name: 42})
 - [x] HTTP client
 - [x] HTTP server (REST API)
 - [x] Optional chaining (`?.`)
-- [ ] Nullish coalescing (`??`)
+- [x] Nullish coalescing (`??`)
 - [ ] REPL
 - [ ] File I/O
 

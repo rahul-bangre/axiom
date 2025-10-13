@@ -181,6 +181,10 @@ export class Tokenizer {
       case ".":
         return this.makeToken(TokenType.DOT, char);
       case "?":
+        if (this.peek() === "?") {
+          this.advance();
+          return this.makeToken(TokenType.NULLISH_COALESCE, "??");
+        }
         if (this.peek() === ".") {
           this.advance();
           return this.makeToken(TokenType.QUESTION_DOT, "?.");

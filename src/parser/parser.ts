@@ -275,7 +275,7 @@ export class Parser {
   }
 
   private ternary(): AST.Expression {
-    const condition = this.logicalOr();
+    const condition = this.nullishCoalesce();
 
     if (this.match(TokenType.QUESTION)) {
       const true_expr = this.ternary();
@@ -291,6 +291,23 @@ export class Parser {
     }
 
     return condition;
+  }
+
+  private nullishCoalesce(): AST.Expression {
+    let left = this.logicalOr();
+
+    while (this.match(TokenType.NULLISH_COALESCE)) {
+      const operator = this.previous().value;
+      const right = this.logicalOr();
+      left = {
+        type: AST.ASTNodeType.BINARY_EXPR,
+        left,
+        operator,
+        right,
+      };
+    }
+
+    return left;
   }
 
   private logicalOr(): AST.Expression {

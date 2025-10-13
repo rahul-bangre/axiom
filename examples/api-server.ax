@@ -18,9 +18,9 @@ fn cors(req) {
 }
 
 fn auth(req) {
-  auth_header = req?.headers?.authorization
+  auth_header = req?.headers?.authorization ?? "none"
   
-  if (auth_header == null) {
+  if (auth_header == "none") {
     print("  ⚠ No authorization header")
     return {
       status: 401,
@@ -94,26 +94,36 @@ fn get_user_by_id(req) {
 fn create_user(req) {
   new_user = json.parse(req.body)
   
-  name = new_user?.name
-  email = new_user?.email
+  name = new_user?.name ?? ""
+  email = new_user?.email ?? ""
   
-  if (name == null) {
+  if (name == "") {
     return {
       status: 400,
       body: json.stringify({ error: "Missing 'name' field" })
     }
   }
   
-  if (email == null) {
+  if (email == "") {
     return {
       status: 400,
       body: json.stringify({ error: "Missing 'email' field" })
     }
   }
   
+  id = new_user?.id ?? len(users) + 1
+  active = new_user?.active ?? true
+  
+  user_with_defaults = {
+    id: id,
+    name: name,
+    email: email,
+    active: active
+  }
+  
   return {
     status: 201,
-    body: json.stringify(new_user)
+    body: json.stringify(user_with_defaults)
   }
 }
 

@@ -1,0 +1,103 @@
+print("=== Optional Chaining & Nullish Coalescing Demo ===")
+print("")
+
+print("1. Basic optional chaining:")
+user1 = { name: "Alice", age: 25 }
+print("  Name:", user1?.name)
+print("  Email:", user1?.email)
+print("")
+
+print("2. Optional chaining with nullish coalescing:")
+user2 = null
+display_name = user2?.name ?? "Guest"
+print("  Display name:", display_name)
+print("")
+
+print("3. Deep chaining with defaults:")
+data = { user: null }
+username = data?.user?.name ?? "Anonymous"
+print("  Username:", username)
+print("")
+
+print("4. Multiple fallbacks:")
+config = { server: { port: null } }
+port = config?.server?.port ?? config?.defaultPort ?? 8080
+print("  Port:", port)
+print("")
+
+print("5. With arrays:")
+items = null
+first_item = items?.[0] ?? "No items"
+print("  First item:", first_item)
+
+valid_items = [10, 20, 30]
+first_valid = valid_items?.[0] ?? 0
+print("  First valid:", first_valid)
+print("")
+
+print("6. Function with safe defaults:")
+fn get_user_display(user) {
+  name = user?.profile?.name ?? user?.username ?? "Unknown User"
+  age = user?.profile?.age ?? 0
+  email = user?.contact?.email ?? "no-email@example.com"
+  
+  return {
+    display: name,
+    age: age,
+    contact: email
+  }
+}
+
+incomplete_user = { username: "bob123" }
+display = get_user_display(incomplete_user)
+print("  Display:", display.display)
+print("  Age:", display.age)
+print("  Contact:", display.contact)
+print("")
+
+complete_user = {
+  profile: { name: "Alice Smith", age: 30 },
+  contact: { email: "alice@example.com" }
+}
+display2 = get_user_display(complete_user)
+print("  Display:", display2.display)
+print("  Age:", display2.age)
+print("  Contact:", display2.contact)
+print("")
+
+print("7. Configuration with fallbacks:")
+fn get_config(env) {
+  db_host = env?.database?.host ?? "localhost"
+  db_port = env?.database?.port ?? 5432
+  cache = env?.redis?.enabled ?? false
+  log_level = env?.logging?.level ?? "info"
+  
+  return {
+    database: db_host + ":" + db_port,
+    cache_enabled: cache,
+    log: log_level
+  }
+}
+
+empty_config = null
+config1 = get_config(empty_config)
+print("  Database:", config1.database)
+print("  Cache:", config1.cache_enabled)
+print("  Log level:", config1.log)
+print("")
+
+partial_config = { database: { host: "prod-db" }, logging: { level: "error" } }
+config2 = get_config(partial_config)
+print("  Database:", config2.database)
+print("  Cache:", config2.cache_enabled)
+print("  Log level:", config2.log)
+print("")
+
+print("8. Chaining with ternary:")
+user_role = null
+permission = (user_role?.name ?? "guest") == "admin" ? "full" : "limited"
+print("  Permission:", permission)
+print("")
+
+print("=== Demo Complete ===")
+

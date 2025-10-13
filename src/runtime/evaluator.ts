@@ -193,10 +193,18 @@ async function evaluateBinaryExpr(
   const left_result = await evaluate(node.left, env, module_loader);
   if (!left_result.ok) return left_result;
 
+  const left_val = left_result.value;
+
+  if (node.operator === "??") {
+    if (left_val.type !== ValueType.NULL) {
+      return ok(left_val);
+    }
+    return await evaluate(node.right, env, module_loader);
+  }
+
   const right_result = await evaluate(node.right, env, module_loader);
   if (!right_result.ok) return right_result;
 
-  const left_val = left_result.value;
   const right_val = right_result.value;
 
   if (["+", "-", "*", "/", "%"].includes(node.operator)) {

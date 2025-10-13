@@ -36,6 +36,7 @@ export enum TokenType {
   AND,
   OR,
   NOT,
+  NULLISH_COALESCE,
 
   LPAREN,
   RPAREN,
