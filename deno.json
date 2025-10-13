@@ -2,7 +2,6 @@
   "tasks": {
     "start": "deno run --allow-read src/cli.ts",
     "run": "deno run --allow-read src/cli.ts",
-    "repl": "deno run --allow-read --allow-write src/repl/repl.ts",
     "test": "deno test --allow-read",
     "dev": "deno run --watch --allow-read src/cli.ts"
   },
@@ -12,8 +11,7 @@
     "@interpreter": "./src/interpreter/mod.ts",
     "@runtime": "./src/runtime/mod.ts",
     "@types": "./src/types/mod.ts",
-    "@std": "./src/std/mod.ts",
-    "@repl": "./src/repl/mod.ts"
+    "@std": "./src/std/mod.ts"
   },
   "compilerOptions": {
     "strict": true,

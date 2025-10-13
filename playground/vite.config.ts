@@ -34,7 +34,6 @@ export default defineConfig({
       "@runtime": path.resolve(__dirname, "../src/runtime/mod"),
       "@types": path.resolve(__dirname, "../src/types/mod"),
       "@std": path.resolve(__dirname, "../src/std/mod"),
-      "@repl": path.resolve(__dirname, "../src/repl/mod"),
     },
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     mainFields: ["module", "main"],
