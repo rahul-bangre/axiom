@@ -364,6 +364,59 @@ http.server(8000, config)
 - ✅ Request object: `{method, path, body, headers, params, query}`
 - ✅ Middleware can transform request or return early response
 
+### File System (std:fs)
+
+> **Note:** File I/O requires Deno runtime and only works via CLI
+> (`deno run --allow-read --allow-write`), not in the browser playground.
+
+Read, write, and manipulate files using the imported `fs` module.
+
+```axiom
+use "std:fs" as fs
+
+// Reading files
+content = await fs.read("data.txt")
+lines = await fs.readLines("config.txt")
+data = await fs.readJson("users.json")
+
+// Writing files
+await fs.write("output.txt", "Hello, Axiom!")
+await fs.append("log.txt", "New entry\n")
+await fs.writeJson("data.json", user_obj, 2)
+
+// File operations
+exists = await fs.exists("data.txt")
+await fs.delete("temp.txt")
+
+// Safe file operations
+exists_check = await fs.exists("data.txt")
+content = exists_check ? await fs.read("data.txt") : null
+
+// Processing files
+log_lines = await fs.readLines("app.log")
+fn count_errors(lines_arr, i, count) {
+  if (i >= len(lines_arr)) {
+    return count
+  }
+  line = lines_arr[i]
+  new_count = line.includes("ERROR") ? count + 1 : count
+  return count_errors(lines_arr, i + 1, new_count)
+}
+error_count = count_errors(log_lines, 0, 0)
+print("Found", error_count, "errors")
+```
+
+**Available Functions:**
+
+- `fs.read(path)` - Read file as string, returns `Result<string>`
+- `fs.write(path, content)` - Write string to file, returns `Result<null>`
+- `fs.append(path, content)` - Append to file, returns `Result<null>`
+- `fs.exists(path)` - Check if file exists, returns `Result<bool>`
+- `fs.delete(path)` - Delete file, returns `Result<null>`
+- `fs.readLines(path)` - Read file as array of lines, returns `Result<array>`
+- `fs.readJson(path)` - Read and parse JSON file, returns `Result<object>`
+- `fs.writeJson(path, data, indent?)` - Write object as JSON, returns `Result<null>`
+
 ## Built-in Functions
 
 ### Core Functions

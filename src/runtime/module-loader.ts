@@ -1,10 +1,11 @@
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
 import { Environment } from "./environment.ts";
-import { RuntimeValue } from "./value.ts";
+import { ObjectValue, RuntimeValue, ValueType } from "./value.ts";
 import { evaluate } from "./evaluator.ts";
 import { ok, Result, runtimeError } from "../types/result.ts";
 import { dirname, isAbsolute, join, resolve } from "https://deno.land/std@0.208.0/path/mod.ts";
+import { fs_namespace } from "../std/fs.ts";
 
 export interface ModuleExports {
   exports: Map<string, RuntimeValue>;
@@ -21,6 +22,10 @@ export class ModuleLoader {
     base_path: string,
     global_env: Environment,
   ): Promise<Result<ModuleExports>> {
+    if (import_path.startsWith("std:")) {
+      return this.loadStdModule(import_path);
+    }
+
     const resolved_path = this.resolvePath(import_path, base_path);
     const previous_file = this.current_file;
     this.current_file = resolved_path;
@@ -73,6 +78,28 @@ export class ModuleLoader {
       const err_obj = error as Error;
       return runtimeError(`Failed to load module '${resolved_path}': ${err_obj.message}`);
     }
+  }
+
+  loadStdModule(import_path: string): Result<ModuleExports> {
+    const module_name = import_path.substring(4);
+
+    const std_modules: Record<string, Record<string, RuntimeValue>> = {
+      fs: fs_namespace,
+    };
+
+    if (!(module_name in std_modules)) {
+      return runtimeError(`Unknown standard library module: ${module_name}`);
+    }
+
+    const exports_map = new Map<string, RuntimeValue>();
+    for (const [key, value] of Object.entries(std_modules[module_name])) {
+      exports_map.set(key, value);
+    }
+
+    return ok({
+      exports: exports_map,
+      path: import_path,
+    });
   }
 
   resolvePath(import_path: string, base_path: string): string {

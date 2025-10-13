@@ -7,3 +7,4 @@ export * from "./http.ts";
 export * from "./server.ts";
 export * from "./set.ts";
 export * from "./map.ts";
+export * from "./fs.ts";
