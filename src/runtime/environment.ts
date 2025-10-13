@@ -4,10 +4,12 @@ import { ok, referenceError, Result } from "../types/result.ts";
 export class Environment {
   private parent?: Environment;
   private variables: Map<string, RuntimeValue>;
+  private exports: Map<string, RuntimeValue>;
 
   constructor(parent?: Environment) {
     this.parent = parent;
     this.variables = new Map();
+    this.exports = new Map();
   }
 
   /* define a new variable in the current scope.
@@ -50,5 +52,19 @@ export class Environment {
      useful for function scopes, block scopes, etc. */
   extend(): Environment {
     return new Environment(this);
+  }
+
+  /* mark a variable as exported from this module. */
+  markExport(name: string): Result<void> {
+    if (!this.variables.has(name)) {
+      return referenceError(`Cannot export undefined variable '${name}'`);
+    }
+    this.exports.set(name, this.variables.get(name)!);
+    return ok(undefined as void);
+  }
+
+  /* get all exported values from this module. */
+  getExports(): Map<string, RuntimeValue> {
+    return new Map(this.exports);
   }
 }

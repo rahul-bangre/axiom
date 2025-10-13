@@ -14,6 +14,10 @@ export enum TokenType {
   TYPE,
   TYPEOF,
   AWAIT,
+  USE,
+  AS,
+  EXPOSING,
+  EXPORT,
 
   PLUS,
   MINUS,
@@ -69,4 +73,8 @@ export const KEYWORDS: Record<string, TokenType> = {
   type: TokenType.TYPE,
   typeof: TokenType.TYPEOF,
   await: TokenType.AWAIT,
+  use: TokenType.USE,
+  as: TokenType.AS,
+  exposing: TokenType.EXPOSING,
+  export: TokenType.EXPORT,
 };

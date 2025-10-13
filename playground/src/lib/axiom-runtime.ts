@@ -1,9 +1,9 @@
 // Browser-compatible Axiom runtime wrapper
-import { Tokenizer } from "@axiom/lexer/tokenizer.ts";
-import { Parser } from "@axiom/parser/parser.ts";
-import { evaluate } from "@axiom/runtime/evaluator.ts";
-import { createGlobalEnv } from "@axiom/runtime/builtins.ts";
-import { ValueType } from "@axiom/runtime/value.ts";
+import { Tokenizer } from "@lexer";
+import { Parser } from "@parser";
+import { createGlobalEnv, evaluate, ValueType } from "@runtime";
+import type { VirtualFS } from "./virtual-fs";
+import { BrowserModuleLoader } from "./browser-module-loader";
 
 export interface ExecutionResult {
   success: boolean;
@@ -12,7 +12,11 @@ export interface ExecutionResult {
   executionTime: number;
 }
 
-export async function runAxiomCode(code: string): Promise<ExecutionResult> {
+export async function runAxiomCode(
+  code: string,
+  current_file: string = "main.ax",
+  virtual_fs?: VirtualFS,
+): Promise<ExecutionResult> {
   const startTime = performance.now();
   const logs: string[] = [];
 
@@ -39,7 +43,12 @@ export async function runAxiomCode(code: string): Promise<ExecutionResult> {
 
     // Evaluate
     const globalEnv = createGlobalEnv();
-    const result = await evaluate(ast, globalEnv);
+    let module_loader;
+    if (virtual_fs) {
+      module_loader = new BrowserModuleLoader(virtual_fs);
+      module_loader.current_file = current_file;
+    }
+    const result = await evaluate(ast, globalEnv, module_loader);
 
     // Restore console
     console.log = originalLog;

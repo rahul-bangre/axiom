@@ -1,0 +1,6 @@
+use "./circular_a.ax" exposing { a_func }
+
+export fn b_func() {
+  return "B"
+}
+

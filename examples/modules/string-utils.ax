@@ -1,0 +1,33 @@
+export fn reverse(text) {
+  chars = text.split("")
+  return chars.reverse().join("")
+}
+
+export fn capitalize(text) {
+  if (text == "") {
+    return text
+  }
+  first_char = text.charAt(0).toUpperCase()
+  rest = text.substring(1)
+  return first_char + rest
+}
+
+export fn title_case(text) {
+  words = text.split(" ")
+  fn capitalize_each(words, index) {
+    if (index >= len(words)) {
+      return []
+    }
+    current_word = capitalize(words[index])
+    rest = capitalize_each(words, index + 1)
+    return rest.push(current_word)
+  }
+  capitalized = capitalize_each(words, 0)
+  return capitalized.reverse().join(" ")
+}
+
+export fn count_words(text) {
+  words = text.split(" ")
+  return len(words)
+}
+

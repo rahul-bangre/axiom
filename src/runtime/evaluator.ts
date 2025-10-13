@@ -4,6 +4,7 @@ import { createStringMethods } from "../std/string.ts";
 import { checkParameterTypes, checkReturnType, checkType } from "@types";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 import { Environment } from "./environment.ts";
+import { ModuleLoader } from "./module-loader.ts";
 import {
   ArrayValue,
   AsyncValue,
@@ -19,16 +20,20 @@ import {
   ValueType,
 } from "./value.ts";
 
-export async function evaluate(node: AST.ASTNode, env: Environment): Promise<Result<RuntimeValue>> {
+export async function evaluate(
+  node: AST.ASTNode,
+  env: Environment,
+  module_loader?: ModuleLoader,
+): Promise<Result<RuntimeValue>> {
   switch (node.type) {
     case AST.ASTNodeType.PROGRAM:
-      return await evaluateProgram(node as AST.Program, env);
+      return await evaluateProgram(node as AST.Program, env, module_loader);
 
     case AST.ASTNodeType.BLOCK_STATEMENT:
-      return await evaluateBlockStatement(node as AST.BlockStatement, env);
+      return await evaluateBlockStatement(node as AST.BlockStatement, env, module_loader);
 
     case AST.ASTNodeType.EXPRESSION_STATEMENT:
-      return await evaluate((node as AST.ExpressionStatement).expression, env);
+      return await evaluate((node as AST.ExpressionStatement).expression, env, module_loader);
 
     case AST.ASTNodeType.NUMBER_LITERAL:
       return ok(
@@ -50,49 +55,62 @@ export async function evaluate(node: AST.ASTNode, env: Environment): Promise<Res
       return ok({ type: ValueType.NULL } as NullValue);
 
     case AST.ASTNodeType.ARRAY_LITERAL:
-      return await evaluateArrayLiteral(node as AST.ArrayLiteral, env);
+      return await evaluateArrayLiteral(node as AST.ArrayLiteral, env, module_loader);
 
     case AST.ASTNodeType.OBJECT_LITERAL:
-      return await evaluateObjectLiteral(node as AST.ObjectLiteral, env);
+      return await evaluateObjectLiteral(node as AST.ObjectLiteral, env, module_loader);
 
     case AST.ASTNodeType.LAMBDA_EXPR:
       return evaluateLambda(node as AST.LambdaExpr, env);
 
     case AST.ASTNodeType.TERNARY_EXPR:
-      return await evaluateTernaryExpr(node as AST.TernaryExpr, env);
+      return await evaluateTernaryExpr(node as AST.TernaryExpr, env, module_loader);
 
     case AST.ASTNodeType.IDENTIFIER:
       return evaluateIdentifier(node as AST.Identifier, env);
 
     case AST.ASTNodeType.BINARY_EXPR:
-      return await evaluateBinaryExpr(node as AST.BinaryExpr, env);
+      return await evaluateBinaryExpr(node as AST.BinaryExpr, env, module_loader);
 
     case AST.ASTNodeType.UNARY_EXPR:
-      return await evaluateUnaryExpr(node as AST.UnaryExpr, env);
+      return await evaluateUnaryExpr(node as AST.UnaryExpr, env, module_loader);
 
     case AST.ASTNodeType.CALL_EXPR:
-      return await evaluateCallExpr(node as AST.CallExpr, env);
+      return await evaluateCallExpr(node as AST.CallExpr, env, module_loader);
 
     case AST.ASTNodeType.MEMBER_EXPR:
-      return await evaluateMemberExpr(node as AST.MemberExpr, env);
+      return await evaluateMemberExpr(node as AST.MemberExpr, env, module_loader);
 
     case AST.ASTNodeType.AWAIT_EXPR:
-      return await evaluateAwaitExpr(node as AST.AwaitExpr, env);
+      return await evaluateAwaitExpr(node as AST.AwaitExpr, env, module_loader);
 
     case AST.ASTNodeType.MATCH_EXPR:
-      return await evaluateMatchExpr(node as AST.MatchExpr, env);
+      return await evaluateMatchExpr(node as AST.MatchExpr, env, module_loader);
 
     case AST.ASTNodeType.CONST_DECLARATION:
-      return await evaluateConstDeclaration(node as AST.ConstDeclaration, env);
+      return await evaluateConstDeclaration(node as AST.ConstDeclaration, env, module_loader);
 
     case AST.ASTNodeType.FUNC_DECLARATION:
       return evaluateFuncDeclaration(node as AST.FuncDeclaration, env);
 
+    case AST.ASTNodeType.USE_DECLARATION:
+      return await evaluateUseDeclaration(node as AST.UseDeclaration, env, module_loader);
+
+    case AST.ASTNodeType.EXPORT_FUNC_DECLARATION:
+      return evaluateExportFuncDeclaration(node as AST.ExportFuncDeclaration, env);
+
+    case AST.ASTNodeType.EXPORT_CONST_DECLARATION:
+      return await evaluateExportConstDeclaration(
+        node as AST.ExportConstDeclaration,
+        env,
+        module_loader,
+      );
+
     case AST.ASTNodeType.IF_STATEMENT:
-      return await evaluateIfStatement(node as AST.IfStatement, env);
+      return await evaluateIfStatement(node as AST.IfStatement, env, module_loader);
 
     case AST.ASTNodeType.RETURN_STATEMENT:
-      return await evaluateReturnStatement(node as AST.ReturnStatement, env);
+      return await evaluateReturnStatement(node as AST.ReturnStatement, env, module_loader);
 
     default:
       return runtimeError(`Unhandled AST node type: ${node.type}`);
@@ -102,18 +120,20 @@ export async function evaluate(node: AST.ASTNode, env: Environment): Promise<Res
 async function evaluateProgram(
   program: AST.Program,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  return await evaluateBlockStatement(program.body, env);
+  return await evaluateBlockStatement(program.body, env, module_loader);
 }
 
 async function evaluateBlockStatement(
   block: AST.BlockStatement,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   let result: RuntimeValue = { type: ValueType.NULL } as NullValue;
 
   for (const statement of block.body) {
-    const stmt_result = await evaluate(statement, env);
+    const stmt_result = await evaluate(statement, env, module_loader);
     if (!stmt_result.ok) return stmt_result;
 
     result = stmt_result.value;
@@ -129,11 +149,12 @@ async function evaluateBlockStatement(
 async function evaluateArrayLiteral(
   node: AST.ArrayLiteral,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   const elements: RuntimeValue[] = [];
 
   for (const elem of node.elements) {
-    const elem_result = await evaluate(elem, env);
+    const elem_result = await evaluate(elem, env, module_loader);
     if (!elem_result.ok) return elem_result;
     elements.push(elem_result.value);
   }
@@ -144,11 +165,12 @@ async function evaluateArrayLiteral(
 async function evaluateObjectLiteral(
   node: AST.ObjectLiteral,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   const properties = new Map<string, RuntimeValue>();
 
   for (const prop of node.properties) {
-    const value_result = await evaluate(prop.value, env);
+    const value_result = await evaluate(prop.value, env, module_loader);
     if (!value_result.ok) return value_result;
     properties.set(prop.key, value_result.value);
   }
@@ -163,11 +185,12 @@ function evaluateIdentifier(node: AST.Identifier, env: Environment): Result<Runt
 async function evaluateBinaryExpr(
   node: AST.BinaryExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const left_result = await evaluate(node.left, env);
+  const left_result = await evaluate(node.left, env, module_loader);
   if (!left_result.ok) return left_result;
 
-  const right_result = await evaluate(node.right, env);
+  const right_result = await evaluate(node.right, env, module_loader);
   if (!right_result.ok) return right_result;
 
   const left_val = left_result.value;
@@ -320,6 +343,7 @@ async function callFunction(
   callee: RuntimeValue,
   args: RuntimeValue[],
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   if (callee.type !== ValueType.FUNCTION && callee.type !== ValueType.NATIVE_FUNCTION) {
     return typeError(`Cannot call non-function value of type ${callee.type}`);
@@ -347,7 +371,7 @@ async function callFunction(
     if (!define_result.ok) return define_result;
   }
 
-  const result = await evaluateBlockStatement(func.body, func_env);
+  const result = await evaluateBlockStatement(func.body, func_env, module_loader);
   if (!result.ok) return result;
 
   if ((result.value as any).isReturn) {
@@ -374,8 +398,9 @@ async function callFunction(
 async function evaluateUnaryExpr(
   node: AST.UnaryExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const operand_result = await evaluate(node.operand, env);
+  const operand_result = await evaluate(node.operand, env, module_loader);
   if (!operand_result.ok) return operand_result;
 
   const operand_val = operand_result.value;
@@ -433,25 +458,27 @@ async function evaluateUnaryExpr(
 async function evaluateCallExpr(
   node: AST.CallExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const callee_result = await evaluate(node.callee, env);
+  const callee_result = await evaluate(node.callee, env, module_loader);
   if (!callee_result.ok) return callee_result;
 
   const args_list: RuntimeValue[] = [];
   for (const arg of node.args) {
-    const arg_result = await evaluate(arg, env);
+    const arg_result = await evaluate(arg, env, module_loader);
     if (!arg_result.ok) return arg_result;
     args_list.push(arg_result.value);
   }
 
-  return await callFunction(callee_result.value, args_list, env);
+  return await callFunction(callee_result.value, args_list, env, module_loader);
 }
 
 async function evaluateMemberExpr(
   node: AST.MemberExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const object_result = await evaluate(node.object, env);
+  const object_result = await evaluate(node.object, env, module_loader);
   if (!object_result.ok) return object_result;
 
   const object_val = object_result.value;
@@ -461,7 +488,7 @@ async function evaluateMemberExpr(
       return typeError(`Cannot use bracket notation on non-array type ${object_val.type}`);
     }
 
-    const index_result = await evaluate(node.property, env);
+    const index_result = await evaluate(node.property, env, module_loader);
     if (!index_result.ok) return index_result;
 
     const index_val = index_result.value;
@@ -484,7 +511,7 @@ async function evaluateMemberExpr(
   if (object_val.type === ValueType.ARRAY) {
     const array_val = object_val as ArrayValue;
     const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
-      callFunction(callee, args, env);
+      callFunction(callee, args, env, module_loader);
     const array_methods = createArrayMethods(call_fn_with_env, isTruthy);
 
     if (property_name in array_methods) {
@@ -501,7 +528,7 @@ async function evaluateMemberExpr(
   if (object_val.type === ValueType.STRING) {
     const string_val = object_val as StringValue;
     const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
-      callFunction(callee, args, env);
+      callFunction(callee, args, env, module_loader);
     const string_methods = createStringMethods(call_fn_with_env);
 
     if (property_name in string_methods) {
@@ -531,8 +558,9 @@ async function evaluateMemberExpr(
 async function evaluateConstDeclaration(
   node: AST.ConstDeclaration,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const value_result = await evaluate(node.value, env);
+  const value_result = await evaluate(node.value, env, module_loader);
   if (!value_result.ok) return value_result;
 
   const value = value_result.value;
@@ -589,26 +617,28 @@ function evaluateLambda(node: AST.LambdaExpr, env: Environment): Result<RuntimeV
 async function evaluateTernaryExpr(
   node: AST.TernaryExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const condition_result = await evaluate(node.condition, env);
+  const condition_result = await evaluate(node.condition, env, module_loader);
   if (!condition_result.ok) return condition_result;
 
   if (isTruthy(condition_result.value)) {
-    return await evaluate(node.true_expr, env);
+    return await evaluate(node.true_expr, env, module_loader);
   }
 
-  return await evaluate(node.false_expr, env);
+  return await evaluate(node.false_expr, env, module_loader);
 }
 
 async function evaluateIfStatement(
   node: AST.IfStatement,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const condition_result = await evaluate(node.condition, env);
+  const condition_result = await evaluate(node.condition, env, module_loader);
   if (!condition_result.ok) return condition_result;
 
   if (isTruthy(condition_result.value)) {
-    return await evaluateBlockStatement(node.body, env);
+    return await evaluateBlockStatement(node.body, env, module_loader);
   }
 
   return ok({ type: ValueType.NULL } as NullValue);
@@ -617,11 +647,12 @@ async function evaluateIfStatement(
 async function evaluateReturnStatement(
   node: AST.ReturnStatement,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   let return_val: RuntimeValue = { type: ValueType.NULL };
 
   if (node.value) {
-    const value_result = await evaluate(node.value, env);
+    const value_result = await evaluate(node.value, env, module_loader);
     if (!value_result.ok) return value_result;
     return_val = value_result.value;
   }
@@ -636,8 +667,9 @@ async function evaluateReturnStatement(
 async function evaluateAwaitExpr(
   node: AST.AwaitExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const arg_result = await evaluate(node.argument, env);
+  const arg_result = await evaluate(node.argument, env, module_loader);
   if (!arg_result.ok) return arg_result;
 
   const value = arg_result.value;
@@ -655,8 +687,9 @@ async function evaluateAwaitExpr(
 async function evaluateMatchExpr(
   node: AST.MatchExpr,
   env: Environment,
+  module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
-  const target_result = await evaluate(node.value, env);
+  const target_result = await evaluate(node.value, env, module_loader);
   if (!target_result.ok) return target_result;
 
   const target_value = target_result.value;
@@ -668,21 +701,104 @@ async function evaluateMatchExpr(
       continue;
     }
 
-    const pattern_result = await evaluate(match_case.pattern, env);
+    const pattern_result = await evaluate(match_case.pattern, env, module_loader);
     if (!pattern_result.ok) return pattern_result;
 
     const pattern_value = pattern_result.value;
 
     if (isEqual(pattern_value, target_value)) {
-      return await evaluate(match_case.body, env);
+      return await evaluate(match_case.body, env, module_loader);
     }
   }
 
   if (default_body) {
-    return await evaluate(default_body, env);
+    return await evaluate(default_body, env, module_loader);
   }
 
   return runtimeError("MatchError: no pattern matched and no default case provided");
+}
+
+async function evaluateUseDeclaration(
+  node: AST.UseDeclaration,
+  env: Environment,
+  module_loader?: ModuleLoader,
+): Promise<Result<RuntimeValue>> {
+  if (!module_loader) {
+    return runtimeError("Module loader not available");
+  }
+
+  const base_path = module_loader.current_file || "";
+  const module_result = await module_loader.loadModule(node.path, base_path, env);
+  if (!module_result.ok) return module_result;
+
+  const module_exports = module_result.value;
+
+  if (node.alias) {
+    const module_obj: ObjectValue = {
+      type: ValueType.OBJECT,
+      properties: module_exports.exports,
+    };
+    return env.define(node.alias, module_obj);
+  }
+
+  if (node.exposing) {
+    for (const name of node.exposing) {
+      if (!module_exports.exports.has(name)) {
+        return runtimeError(`Module '${node.path}' does not export '${name}'`);
+      }
+      const define_result = env.define(name, module_exports.exports.get(name)!);
+      if (!define_result.ok) return define_result;
+    }
+  }
+
+  return ok({ type: ValueType.NULL } as NullValue);
+}
+
+function evaluateExportFuncDeclaration(
+  node: AST.ExportFuncDeclaration,
+  env: Environment,
+): Result<RuntimeValue> {
+  const func_val: FunctionValue = {
+    type: ValueType.FUNCTION,
+    name: node.name,
+    params: node.params.map((p) => p.name),
+    param_info: node.params,
+    return_type: node.return_type,
+    body: node.body,
+    closure: env,
+  };
+
+  const define_result = env.define(node.name, func_val);
+  if (!define_result.ok) return define_result;
+
+  const export_result = env.markExport(node.name);
+  if (!export_result.ok) return export_result;
+
+  return ok(func_val);
+}
+
+async function evaluateExportConstDeclaration(
+  node: AST.ExportConstDeclaration,
+  env: Environment,
+  module_loader?: ModuleLoader,
+): Promise<Result<RuntimeValue>> {
+  const value_result = await evaluate(node.value, env, module_loader);
+  if (!value_result.ok) return value_result;
+
+  const value = value_result.value;
+
+  if (node.type_annotation) {
+    const type_check = checkType(value, node.type_annotation, `variable '${node.identifier}'`);
+    if (!type_check.ok) return type_check;
+  }
+
+  const define_result = env.define(node.identifier, value);
+  if (!define_result.ok) return define_result;
+
+  const export_result = env.markExport(node.identifier);
+  if (!export_result.ok) return export_result;
+
+  return ok(value);
 }
 
 function isEqual(a: RuntimeValue, b: RuntimeValue): boolean {

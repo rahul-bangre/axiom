@@ -1,0 +1,8 @@
+export fn greet(name) {
+  return "Hello, " + name
+}
+
+export fn format_number(n) {
+  return "Number: " + n
+}
+

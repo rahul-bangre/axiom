@@ -1,0 +1,11 @@
+use "./math.ax" exposing { add, multiply }
+
+export fn calculate_sum(a, b, c) {
+  temp = add(a, b)
+  return add(temp, c)
+}
+
+export fn calculate_product(a, b) {
+  return multiply(a, b)
+}
+

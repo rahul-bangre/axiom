@@ -26,7 +26,20 @@ export function Editor({ value, onChange, onRun }: EditorProps) {
       monaco.languages.register({ id: "axiom" });
 
       monaco.languages.setMonarchTokensProvider("axiom", {
-        keywords: ["fn", "return", "if", "match", "default", "await", "typeof", "async"],
+        keywords: [
+          "fn",
+          "return",
+          "if",
+          "match",
+          "default",
+          "await",
+          "typeof",
+          "async",
+          "use",
+          "as",
+          "exposing",
+          "export",
+        ],
 
         booleanLiterals: ["true", "false", "null"],
 

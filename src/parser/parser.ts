@@ -1,6 +1,5 @@
 import { Token, TokenType } from "@lexer";
 import * as AST from "./ast.ts";
-import { LexerError } from "@runtime";
 
 class ParserError extends Error {
   line: number;
@@ -39,6 +38,14 @@ export class Parser {
   }
 
   private statement(): AST.Statement {
+    if (this.match(TokenType.USE)) {
+      return this.useDeclaration();
+    }
+
+    if (this.match(TokenType.EXPORT)) {
+      return this.exportDeclaration();
+    }
+
     if (this.match(TokenType.FN)) {
       return this.funcDeclaration();
     }
@@ -596,6 +603,58 @@ export class Parser {
       type: AST.ASTNodeType.MATCH_EXPR,
       value,
       cases,
+    };
+  }
+
+  private useDeclaration(): AST.UseDeclaration {
+    const path_token = this.consume(TokenType.STRING, "Expected module path string after 'use'");
+    const path = path_token.value;
+
+    let alias: string | undefined;
+    let exposing: string[] | undefined;
+
+    if (this.match(TokenType.AS)) {
+      alias = this.consume(TokenType.IDENTIFIER, "Expected alias name after 'as'").value;
+    } else if (this.match(TokenType.EXPOSING)) {
+      this.consume(TokenType.LBRACE, "Expected '{' after 'exposing'");
+      exposing = [];
+
+      if (!this.check(TokenType.RBRACE)) {
+        do {
+          const name = this.consume(TokenType.IDENTIFIER, "Expected exported name").value;
+          exposing.push(name);
+        } while (this.match(TokenType.COMMA));
+      }
+
+      this.consume(TokenType.RBRACE, "Expected '}' after exposing list");
+    }
+
+    return {
+      type: AST.ASTNodeType.USE_DECLARATION,
+      path,
+      alias,
+      exposing,
+    };
+  }
+
+  private exportDeclaration(): AST.ExportFuncDeclaration | AST.ExportConstDeclaration {
+    if (this.match(TokenType.FN)) {
+      const func_decl = this.funcDeclaration();
+      return {
+        type: AST.ASTNodeType.EXPORT_FUNC_DECLARATION,
+        name: func_decl.name,
+        params: func_decl.params,
+        return_type: func_decl.return_type,
+        body: func_decl.body,
+      };
+    }
+
+    const const_decl = this.constDeclaration();
+    return {
+      type: AST.ASTNodeType.EXPORT_CONST_DECLARATION,
+      identifier: const_decl.identifier,
+      type_annotation: const_decl.type_annotation,
+      value: const_decl.value,
     };
   }
 

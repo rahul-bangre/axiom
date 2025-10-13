@@ -1,0 +1,54 @@
+use "./math-utils.ax" exposing { factorial, fibonacci, is_prime, PI }
+use "./string-utils.ax" as str
+
+print("=== Math Utilities ===")
+
+print("Factorial of 5:")
+result = factorial(5)
+print(result)
+
+print("Fibonacci sequence (first 8 numbers):")
+fn print_fib(n) {
+  if (n == 0) {
+    return null
+  }
+  fib_num = fibonacci(n - 1)
+  print(fib_num)
+  return print_fib(n - 1)
+}
+print_fib(8)
+
+print("Checking primes from 1 to 10:")
+fn check_primes(i) {
+  if (i > 10) {
+    return null
+  }
+  prime = is_prime(i)
+  message = prime ? i + " is prime" : i + " is not prime"
+  print(message)
+  return check_primes(i + 1)
+}
+check_primes(1)
+
+print("Value of PI:")
+print(PI)
+
+print("")
+print("=== String Utilities ===")
+
+text = "hello world"
+print("Original text: " + text)
+
+reversed = str.reverse(text)
+print("Reversed: " + reversed)
+
+capitalized = str.capitalize(text)
+print("Capitalized: " + capitalized)
+
+title = str.title_case(text)
+print("Title case: " + title)
+
+sentence = "the quick brown fox jumps over the lazy dog"
+word_count = str.count_words(sentence)
+print("Word count in '" + sentence + "': " + word_count)
+

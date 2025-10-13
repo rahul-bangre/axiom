@@ -1,6 +1,7 @@
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
 import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import { ModuleLoader } from "./runtime/module-loader.ts";
 
 function printValue(value: RuntimeValue): string {
   switch (value.type) {
@@ -34,7 +35,8 @@ function printValue(value: RuntimeValue): string {
 
 async function runFile(file_path: string): Promise<void> {
   try {
-    const source_code = await Deno.readTextFile(file_path);
+    const absolute_path = await Deno.realPath(file_path);
+    const source_code = await Deno.readTextFile(absolute_path);
 
     const tokenizer = new Tokenizer(source_code);
     const tokens = tokenizer.tokenize();
@@ -43,7 +45,10 @@ async function runFile(file_path: string): Promise<void> {
     const ast_node = parser.parse();
 
     const global_env = createGlobalEnv();
-    const eval_result = await evaluate(ast_node, global_env);
+    const module_loader = new ModuleLoader();
+    module_loader.current_file = absolute_path;
+
+    const eval_result = await evaluate(ast_node, global_env, module_loader);
 
     if (!eval_result.ok) {
       console.error(`Error: ${eval_result.error}`);

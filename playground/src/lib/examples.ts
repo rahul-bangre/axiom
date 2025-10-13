@@ -1,9 +1,14 @@
 export interface Example {
   name: string;
-  code: string;
+  code?: string;
+  files?: Record<string, string>;
 }
 
 export const examples: Example[] = [
+  {
+    name: "Blank",
+    code: `// welcome to axiom!\n`,
+  },
   {
     name: "Hello World",
     code: `// welcome to axiom!
@@ -174,5 +179,59 @@ fn fizzbuzz(n) {
 }
 
 fizzbuzz(20)`,
+  },
+  {
+    name: "Module System",
+    files: {
+      "main.ax": `// importing from other modules
+use "./math.ax" exposing { add, multiply }
+use "./utils.ax" as utils
+
+print("=== Module System Demo ===")
+
+x = 5
+y = 10
+
+sum = add(x, y)
+product = multiply(x, y)
+
+print("add(5, 10) =", sum)
+print("multiply(5, 10) =", product)
+
+greeting = utils.greet("Axiom")
+print(greeting)
+
+doubled = utils.double(sum)
+print("double(sum) =", doubled)`,
+      "math.ax": `// math utility functions
+export fn add(a, b) {
+  return a + b
+}
+
+export fn multiply(a, b) {
+  return a * b
+}
+
+export fn power(base, exp) {
+  if (exp == 0) {
+    return 1
+  }
+  return base * power(base, exp - 1)
+}`,
+      "utils.ax": `// general utility functions
+use "./math.ax" exposing { multiply }
+
+export fn greet(name) {
+  return "Hello, " + name + "!"
+}
+
+export fn double(n) {
+  return multiply(n, 2)
+}
+
+export fn triple(n) {
+  return multiply(n, 3)
+}`,
+    },
   },
 ];

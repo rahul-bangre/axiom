@@ -21,6 +21,9 @@ export enum ASTNodeType {
 
   CONST_DECLARATION,
   FUNC_DECLARATION,
+  USE_DECLARATION,
+  EXPORT_FUNC_DECLARATION,
+  EXPORT_CONST_DECLARATION,
 
   IF_STATEMENT,
   RETURN_STATEMENT,
@@ -147,6 +150,31 @@ export interface FuncDeclaration extends ASTNode {
   body: BlockStatement;
 }
 
+export interface UseDeclaration extends ASTNode {
+  type: ASTNodeType.USE_DECLARATION;
+  path: string;
+  alias?: string;
+  exposing?: string[];
+}
+
+export interface ExportFuncDeclaration extends ASTNode {
+  type: ASTNodeType.EXPORT_FUNC_DECLARATION;
+  name: string;
+  params: Array<{
+    name: string;
+    type_annotation?: string;
+  }>;
+  return_type?: string;
+  body: BlockStatement;
+}
+
+export interface ExportConstDeclaration extends ASTNode {
+  type: ASTNodeType.EXPORT_CONST_DECLARATION;
+  identifier: string;
+  type_annotation?: string;
+  value: Expression;
+}
+
 export interface IfStatement extends ASTNode {
   type: ASTNodeType.IF_STATEMENT;
   condition: Expression;
@@ -188,6 +216,9 @@ export type Expression =
 export type Statement =
   | ConstDeclaration
   | FuncDeclaration
+  | UseDeclaration
+  | ExportFuncDeclaration
+  | ExportConstDeclaration
   | IfStatement
   | ReturnStatement
   | BlockStatement
