@@ -8,3 +8,4 @@ export * from "./server.ts";
 export * from "./set.ts";
 export * from "./map.ts";
 export * from "./fs.ts";
+export * from "./db.ts";

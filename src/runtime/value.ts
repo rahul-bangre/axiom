@@ -12,6 +12,10 @@ export enum ValueType {
   FUNCTION,
   NATIVE_FUNCTION,
   ASYNC,
+  DATABASE,
+  COLLECTION,
+  QUERY_BUILDER,
+  TRANSACTION,
 }
 
 export interface RuntimeValue {
@@ -71,4 +75,32 @@ export interface AsyncValue extends RuntimeValue {
 
 export function makeAsyncValue(promise: Promise<RuntimeValue>): AsyncValue {
   return { type: ValueType.ASYNC, promise };
+}
+
+export interface DatabaseValue extends RuntimeValue {
+  type: ValueType.DATABASE;
+  connection: any;
+  path: string;
+}
+
+export interface CollectionValue extends RuntimeValue {
+  type: ValueType.COLLECTION;
+  database: DatabaseValue;
+  tableName: string;
+  schema: ObjectValue;
+}
+
+export interface QueryBuilderValue extends RuntimeValue {
+  type: ValueType.QUERY_BUILDER;
+  collection: CollectionValue;
+  whereClauses: Array<{ field: string; operator: string; value: RuntimeValue }>;
+  orderByClauses: Array<{ field: string; direction: string }>;
+  limitValue: number | null;
+  offsetValue: number | null;
+}
+
+export interface TransactionValue extends RuntimeValue {
+  type: ValueType.TRANSACTION;
+  database: DatabaseValue;
+  active: boolean;
 }

@@ -10,7 +10,8 @@ A minimal, typed, functional language built on immutable truth.
 - ⚡ **Clean syntax** - no semicolons, minimal keywords
 - 🚀 **Fast execution** - built with Deno + TypeScript
 - 🔄 **Async/Await** - asynchronous computations as values
-- ✨ **Rich standard library** - arrays, strings, sets, maps, schema validation, HTTP client
+- ✨ **Rich standard library** - arrays, strings, sets, maps, schema validation, HTTP client,
+  database (SQLite)
 - 🌐 **Web playground** - interactive browser-based editor
 
 ## Philosophy
@@ -766,6 +767,189 @@ fn fetch_data(id: int): async string {
 }
 ```
 
+## Database (std:db)
+
+> **Note**: The database module uses SQLite and is **CLI-only**. It cannot run in the browser
+> playground.
+
+Axiom provides a schema-driven, functional database API built on SQLite with full transaction
+support.
+
+### Opening a Database
+
+```axiom
+use "std:db" as db
+
+// In-memory database
+store = await db.open(":memory:")
+
+// File-based database (persistent)
+store = await db.open("users.db")
+
+// Close database
+await db.close(store)
+```
+
+### Creating Collections
+
+Collections are schema-validated tables:
+
+```axiom
+user_schema = schema.object({
+  name: schema.string(),
+  age: schema.number(),
+  email: schema.string()
+})
+
+users = db.collection(store, "users", user_schema)
+```
+
+### CRUD Operations
+
+**Insert** (with automatic schema validation):
+
+```axiom
+alice = await db.insert(users, {
+  name: "Alice",
+  age: 25,
+  email: "alice@example.com"
+})
+print(alice.id)  // Auto-generated ID
+```
+
+**Get by ID**:
+
+```axiom
+user = await db.get(users, 1)
+// Returns null if not found
+```
+
+**Delete by ID**:
+
+```axiom
+await db.deleteById(users, 1)
+```
+
+### Query Builder
+
+Build composable, type-safe queries:
+
+**Basic queries**:
+
+```axiom
+// Get all users
+all_users = await db.select(users).all()
+
+// Get first match
+first = await db.select(users)
+  .where("age", ">=", 18)
+  .first()
+
+// Count records
+count = await db.select(users)
+  .where("age", ">", 21)
+  .count()
+```
+
+**Complex queries**:
+
+```axiom
+results = await db.select(users)
+  .where("age", ">=", 18)
+  .where("age", "<", 65)
+  .orderBy("name", "asc")
+  .limit(10)
+  .offset(0)
+  .all()
+```
+
+**Supported operators**: `=`, `!=`, `>`, `>=`, `<`, `<=`, `like`, `in`
+
+### Update Operations
+
+```axiom
+rows_affected = await db.update(users)
+  .where("age", "<", 18)
+  .set({ age: 18 })
+  .execute()
+```
+
+### Delete Operations
+
+```axiom
+rows_deleted = await db.delete(users)
+  .where("age", "<", 13)
+  .executeDelete()
+```
+
+### Transactions
+
+```axiom
+tx = await db.begin(store)
+
+// Perform operations...
+await db.insert(users, {...})
+await db.update(users).where(...).set(...).execute()
+
+// Commit or rollback
+await db.commit(tx)
+// OR
+await db.rollback(tx)
+```
+
+### Schema Validation
+
+All insert and update operations automatically validate data:
+
+```axiom
+result = await db.insert(users, {
+  name: "Bob",
+  age: "not a number"  // Error: Expected number
+})
+```
+
+### Available Functions
+
+**Connection**:
+
+- `db.open(path: string) -> async Database`
+- `db.close(db: Database) -> async null`
+
+**Collections**:
+
+- `db.collection(db: Database, name: string, schema: ObjectSchema) -> Collection`
+
+**CRUD**:
+
+- `db.insert(collection: Collection, data: object) -> async object`
+- `db.get(collection: Collection, id: number) -> async object`
+- `db.deleteById(collection: Collection, id: number) -> async null`
+
+**Query Builder**:
+
+- `db.select(collection: Collection) -> QueryBuilder`
+- `.where(field: string, operator: string, value: any) -> QueryBuilder`
+- `.orderBy(field: string, direction: string) -> QueryBuilder`
+- `.limit(n: number) -> QueryBuilder`
+- `.offset(n: number) -> QueryBuilder`
+- `.all() -> async array`
+- `.first() -> async object`
+- `.count() -> async number`
+
+**Update/Delete**:
+
+- `db.update(collection: Collection) -> UpdateBuilder`
+- `.set(data: object) -> UpdateBuilder`
+- `.execute() -> async number`
+- `db.delete(collection: Collection) -> DeleteBuilder`
+- `.executeDelete() -> async number`
+
+**Transactions**:
+
+- `db.begin(db: Database) -> async Transaction`
+- `db.commit(tx: Transaction) -> async null`
+- `db.rollback(tx: Transaction) -> async null`
+
 ## Error Handling
 
 Axiom uses errors as values with the `Result<T>` pattern:
@@ -800,11 +984,11 @@ result = user_schema.parse({name: 42})
 - [x] VSCode extension
 - [x] Module system
 - [x] HTTP client
-- [x] HTTP server (REST API)
+- [x] HTTP server (REST API, CLI-only)
 - [x] Optional chaining (`?.`)
 - [x] Nullish coalescing (`??`)
-- [ ] REPL
-- [ ] File I/O
+- [x] File I/O
+- [x] Database (SQLite, CLI-only)
 
 ## Philosophy & Design
 

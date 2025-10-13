@@ -1,0 +1,50 @@
+use "std:db" as db
+
+fn main() -> async null {
+  print("=== Axiom Database Demo ===")
+  print("")
+  
+  database = await db.open(":memory:")
+  print("✓ Opened in-memory database")
+  print("")
+  
+  user_schema = schema.object({
+    name: schema.string(),
+    age: schema.number()
+  })
+  
+  users = db.collection(database, "users", user_schema)
+  print("✓ Created 'users' collection")
+  print("")
+  
+  print("--- Basic CRUD Operations ---")
+  print("")
+  
+  print("INSERT:")
+  alice = await db.insert(users, { name: "Alice", age: 25 })
+  print("  Inserted Alice (ID:", alice.id, ")")
+  
+  bob = await db.insert(users, { name: "Bob", age: 30 })
+  print("  Inserted Bob (ID:", bob.id, ")")
+  print("")
+  
+  print("GET by ID:")
+  retrieved = await db.get(users, alice.id)
+  print("  Retrieved:", retrieved.name, "- Age:", retrieved.age)
+  print("")
+  
+  print("DELETE by ID:")
+  await db.deleteById(users, bob.id)
+  result = await db.get(users, bob.id)
+  print("  Deleted Bob")
+  print("  Get deleted user:", typeof result)
+  print("")
+  
+  await db.close(database)
+  print("✓ Closed database")
+  
+  return null
+}
+
+await main()
+

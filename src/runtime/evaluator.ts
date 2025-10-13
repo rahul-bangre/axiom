@@ -15,6 +15,7 @@ import {
   NullValue,
   NumberValue,
   ObjectValue,
+  QueryBuilderValue,
   RuntimeValue,
   StringValue,
   ValueType,
@@ -559,6 +560,43 @@ async function evaluateMemberExpr(
     }
 
     return runtimeError(`String has no method '${property_name}'`);
+  }
+
+  if (object_val.type === ValueType.QUERY_BUILDER) {
+    const builder_val = object_val as QueryBuilderValue;
+
+    const query_builder_methods = [
+      "where",
+      "orderBy",
+      "limit",
+      "offset",
+      "all",
+      "first",
+      "count",
+      "set",
+      "execute",
+      "executeDelete",
+    ];
+
+    if (!query_builder_methods.includes(property_name)) {
+      return runtimeError(`QueryBuilder has no method '${property_name}'`);
+    }
+
+    const { db_namespace } = await import("../std/db.ts");
+    const method = db_namespace[property_name];
+    if (!method || method.type !== ValueType.NATIVE_FUNCTION) {
+      return runtimeError(`Method '${property_name}' not found in db namespace`);
+    }
+    const native_fn = method as NativeFunctionValue;
+
+    return ok({
+      type: ValueType.NATIVE_FUNCTION,
+      name: property_name,
+      return_type: native_fn.return_type,
+      call: async (args: RuntimeValue[]) => {
+        return await native_fn.call([builder_val, ...args]);
+      },
+    } as NativeFunctionValue);
   }
 
   if (object_val.type !== ValueType.OBJECT) {

@@ -85,6 +85,21 @@ export class BrowserModuleLoader {
     }
   }
 
+  loadStdModule(import_path: string): Result<ModuleExports> {
+    const module_name = import_path.substring(4);
+
+    const cli_only_modules = ["db", "fs", "math"];
+
+    if (cli_only_modules.includes(module_name)) {
+      return runtimeError(
+        `Module 'std:${module_name}' is CLI-only and cannot run in the browser. ` +
+          `This module requires native system APIs that are not available in the browser environment.`,
+      );
+    }
+
+    return runtimeError(`Unknown standard library module: std:${module_name}`);
+  }
+
   resolvePath(import_path: string, base_path: string): string {
     if (import_path.startsWith("/")) {
       return import_path;
