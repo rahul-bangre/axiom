@@ -115,6 +115,22 @@ fn absolute(n) {
 
 // Ternary operator
 result = x > 0 ? "positive" : "non-positive"
+
+// Match expressions (pattern matching)
+status = 200
+message = match(status,
+  200 -> "OK",
+  404 -> "Not Found",
+  500 -> "Server Error",
+  default -> "Unknown"
+)
+
+// Match with any expression
+result = match(x * 2,
+  0 -> "zero",
+  10 -> "ten",
+  default -> "other"
+)
 ```
 
 ### Collections
@@ -296,6 +312,7 @@ See the `examples/` directory:
 
 - `leetcode.ax` - LeetCode problem solutions
 - `async-demo.ax` - async/await demonstration
+- `match-demo.ax` - pattern matching examples
 - `schema-validation.ax` - schema validation examples
 
 ## Playground

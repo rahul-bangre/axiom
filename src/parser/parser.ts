@@ -515,6 +515,10 @@ export class Parser {
       return this.objectLiteral();
     }
 
+    if (this.match(TokenType.MATCH)) {
+      return this.matchExpression();
+    }
+
     if (this.match(TokenType.LPAREN)) {
       const expr = this.expression();
       this.consume(TokenType.RPAREN, "Expected ')' after expression");
@@ -558,6 +562,40 @@ export class Parser {
     return {
       type: AST.ASTNodeType.OBJECT_LITERAL,
       properties,
+    };
+  }
+
+  private matchExpression(): AST.MatchExpr {
+    this.consume(TokenType.LPAREN, "Expected '(' after 'match'");
+
+    const value = this.expression();
+
+    this.consume(TokenType.COMMA, "Expected ',' after match value");
+
+    const cases: AST.MatchCase[] = [];
+
+    do {
+      let pattern: AST.Expression | "default";
+
+      if (this.match(TokenType.DEFAULT)) {
+        pattern = "default";
+      } else {
+        pattern = this.expression();
+      }
+
+      this.consume(TokenType.THIN_ARROW, "Expected '->' after match pattern");
+
+      const body = this.expression();
+
+      cases.push({ pattern, body });
+    } while (this.match(TokenType.COMMA));
+
+    this.consume(TokenType.RPAREN, "Expected ')' after match cases");
+
+    return {
+      type: AST.ASTNodeType.MATCH_EXPR,
+      value,
+      cases,
     };
   }
 

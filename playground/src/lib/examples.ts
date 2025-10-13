@@ -149,17 +149,22 @@ print("Values:", result[0], "+", result[1], "= 9")`,
   },
   {
     name: "FizzBuzz",
-    code: `// classic fizzbuzz
+    code: `// classic fizzbuzz with pattern matching
 fn fizzbuzz(n) {
   fn helper(i) {
     if (i > n) {
       return null
     }
     
-    is_three = i % 3 == 0
-    is_five = i % 5 == 0
+    div_by_3 = i % 3 == 0
+    div_by_5 = i % 5 == 0
     
-    output = is_three && is_five ? "fizzbuzz" : (is_three ? "fizz" : (is_five ? "buzz" : i))
+    output = match(true,
+      div_by_3 && div_by_5 -> "fizzbuzz",
+      div_by_3 -> "fizz",
+      div_by_5 -> "buzz",
+      default -> i
+    )
     
     print(output)
     return helper(i + 1)

@@ -79,6 +79,9 @@ export async function evaluate(node: AST.ASTNode, env: Environment): Promise<Res
     case AST.ASTNodeType.AWAIT_EXPR:
       return await evaluateAwaitExpr(node as AST.AwaitExpr, env);
 
+    case AST.ASTNodeType.MATCH_EXPR:
+      return await evaluateMatchExpr(node as AST.MatchExpr, env);
+
     case AST.ASTNodeType.CONST_DECLARATION:
       return await evaluateConstDeclaration(node as AST.ConstDeclaration, env);
 
@@ -647,4 +650,54 @@ async function evaluateAwaitExpr(
   const resolved = await async_val.promise;
 
   return ok(resolved);
+}
+
+async function evaluateMatchExpr(
+  node: AST.MatchExpr,
+  env: Environment,
+): Promise<Result<RuntimeValue>> {
+  const target_result = await evaluate(node.value, env);
+  if (!target_result.ok) return target_result;
+
+  const target_value = target_result.value;
+  let default_body: AST.Expression | null = null;
+
+  for (const match_case of node.cases) {
+    if (match_case.pattern === "default") {
+      default_body = match_case.body;
+      continue;
+    }
+
+    const pattern_result = await evaluate(match_case.pattern, env);
+    if (!pattern_result.ok) return pattern_result;
+
+    const pattern_value = pattern_result.value;
+
+    if (isEqual(pattern_value, target_value)) {
+      return await evaluate(match_case.body, env);
+    }
+  }
+
+  if (default_body) {
+    return await evaluate(default_body, env);
+  }
+
+  return runtimeError("MatchError: no pattern matched and no default case provided");
+}
+
+function isEqual(a: RuntimeValue, b: RuntimeValue): boolean {
+  if (a.type !== b.type) return false;
+
+  switch (a.type) {
+    case ValueType.NUMBER:
+      return (a as NumberValue).value === (b as NumberValue).value;
+    case ValueType.STRING:
+      return (a as StringValue).value === (b as StringValue).value;
+    case ValueType.BOOLEAN:
+      return (a as BooleanValue).value === (b as BooleanValue).value;
+    case ValueType.NULL:
+      return true;
+    default:
+      return false;
+  }
 }

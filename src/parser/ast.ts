@@ -17,6 +17,7 @@ export enum ASTNodeType {
   LAMBDA_EXPR,
   TERNARY_EXPR,
   AWAIT_EXPR,
+  MATCH_EXPR,
 
   CONST_DECLARATION,
   FUNC_DECLARATION,
@@ -117,6 +118,17 @@ export interface AwaitExpr extends ASTNode {
   argument: Expression;
 }
 
+export interface MatchCase {
+  pattern: Expression | "default";
+  body: Expression;
+}
+
+export interface MatchExpr extends ASTNode {
+  type: ASTNodeType.MATCH_EXPR;
+  value: Expression;
+  cases: MatchCase[];
+}
+
 export interface ConstDeclaration extends ASTNode {
   type: ASTNodeType.CONST_DECLARATION;
   identifier: string;
@@ -170,7 +182,8 @@ export type Expression =
   | UnaryExpr
   | CallExpr
   | MemberExpr
-  | AwaitExpr;
+  | AwaitExpr
+  | MatchExpr;
 
 export type Statement =
   | ConstDeclaration

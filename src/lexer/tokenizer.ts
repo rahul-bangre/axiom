@@ -103,6 +103,10 @@ export class Tokenizer {
       case "+":
         return this.makeToken(TokenType.PLUS, char);
       case "-":
+        if (this.peek() === ">") {
+          this.advance();
+          return this.makeToken(TokenType.THIN_ARROW, "->");
+        }
         return this.makeToken(TokenType.MINUS, char);
       case "*":
         return this.makeToken(TokenType.MULTIPLY, char);

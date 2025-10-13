@@ -1,0 +1,151 @@
+// Match Expression Demo
+// Pattern matching with clean syntax
+
+// ==================== Basic Pattern Matching ====================
+
+status_code = 404
+message = match(status_code,
+  200 -> "OK",
+  201 -> "Created",
+  404 -> "Not Found",
+  500 -> "Server Error",
+  default -> "Unknown Status"
+)
+print("Status:", status_code, "->", message)
+
+// ==================== Match with Numbers ====================
+
+score = 85
+grade = match(score,
+  100 -> "Perfect!",
+  90 -> "A",
+  80 -> "B",
+  70 -> "C",
+  60 -> "D",
+  default -> "F"
+)
+print("Score:", score, "Grade:", grade)
+
+// ==================== Match with Strings ====================
+
+command = "start"
+action = match(command,
+  "start" -> "Starting application...",
+  "stop" -> "Stopping application...",
+  "restart" -> "Restarting application...",
+  "status" -> "Checking status...",
+  default -> "Unknown command"
+)
+print(action)
+
+// ==================== Match with Expressions ====================
+
+x = 5
+result = match(x * 2,
+  0 -> "zero",
+  5 -> "five",
+  10 -> "ten",
+  15 -> "fifteen",
+  20 -> "twenty",
+  default -> "other"
+)
+print("x * 2 =", x * 2, "->", result)
+
+// ==================== Match with Boolean ====================
+
+is_admin = true
+access = match(is_admin,
+  true -> "Full Access",
+  false -> "Limited Access",
+  default -> "No Access"
+)
+print("Access Level:", access)
+
+// ==================== Match in Function ====================
+
+fn getDayMessage(day_num) {
+  return match(day_num,
+    1 -> "Monday - New week!",
+    2 -> "Tuesday - Getting started",
+    3 -> "Wednesday - Midweek",
+    4 -> "Thursday - Almost there",
+    5 -> "Friday - Weekend soon!",
+    6 -> "Saturday - Weekend!",
+    7 -> "Sunday - Relax",
+    default -> "Invalid day"
+  )
+}
+
+print(getDayMessage(1))
+print(getDayMessage(5))
+print(getDayMessage(7))
+
+// ==================== Nested Match ====================
+
+user_role = "admin"
+request_type = "write"
+
+permission = match(user_role,
+  "admin" -> "Allowed",
+  "editor" -> match(request_type,
+    "read" -> "Allowed",
+    "write" -> "Allowed",
+    default -> "Denied"
+  ),
+  "viewer" -> match(request_type,
+    "read" -> "Allowed",
+    default -> "Denied"
+  ),
+  default -> "Denied"
+)
+
+print("Role:", user_role, "Request:", request_type, "->", permission)
+
+// ==================== Match with Null ====================
+
+value = null
+output = match(value,
+  0 -> "zero",
+  null -> "nothing",
+  default -> "something"
+)
+print("Value:", value, "->", output)
+
+// ==================== Match as Expression ====================
+
+n = 3
+print("Result:", "The number is " + match(n,
+  1 -> "one",
+  2 -> "two",
+  3 -> "three",
+  default -> "many"
+))
+
+// ==================== Using Match with Array Methods ====================
+
+codes = [200, 404, 500, 201, 403]
+messages = codes.map((code) => match(code,
+  200 -> "OK",
+  201 -> "Created",
+  404 -> "Not Found",
+  403 -> "Forbidden",
+  500 -> "Error",
+  default -> "Unknown"
+))
+
+print("\nStatus codes and messages:")
+codes.forEach((code) => {
+  msg = match(code,
+    200 -> "OK",
+    201 -> "Created",
+    404 -> "Not Found",
+    403 -> "Forbidden",
+    500 -> "Error",
+    default -> "Unknown"
+  )
+  print("  ", code, "->", msg)
+  return null
+})
+
+print("\n✓ Match expression demonstration complete!")
+
