@@ -31,11 +31,11 @@
       "patterns": [
         {
           "name": "keyword.control.axiom",
-          "match": "\\b(if|return)\\b"
+          "match": "\\b(if|return|match|default|await)\\b"
         },
         {
           "name": "keyword.other.axiom",
-          "match": "\\b(fn|type|typeof)\\b"
+          "match": "\\b(fn|type|typeof|use|as|exposing|export)\\b"
         }
       ]
     },
@@ -104,7 +104,7 @@
       "patterns": [
         {
           "name": "storage.type.axiom",
-          "match": "\\b(int|float|string|bool|boolean|null|void|array|object|function|any)\\b"
+          "match": "\\b(int|float|string|bool|boolean|null|void|array|object|function|any|async)\\b"
         }
       ]
     },
@@ -125,6 +125,10 @@
         {
           "name": "keyword.operator.arithmetic.axiom",
           "match": "\\+|-|\\*|/|%"
+        },
+        {
+          "name": "keyword.operator.optional-chaining.axiom",
+          "match": "\\?\\."
         },
         {
           "name": "keyword.operator.ternary.axiom",

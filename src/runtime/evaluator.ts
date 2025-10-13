@@ -81,6 +81,9 @@ export async function evaluate(
     case AST.ASTNodeType.MEMBER_EXPR:
       return await evaluateMemberExpr(node as AST.MemberExpr, env, module_loader);
 
+    case AST.ASTNodeType.OPTIONAL_CHAIN_EXPR:
+      return await evaluateOptionalChainExpr(node as AST.OptionalChainExpr, env, module_loader);
+
     case AST.ASTNodeType.AWAIT_EXPR:
       return await evaluateAwaitExpr(node as AST.AwaitExpr, env, module_loader);
 
@@ -558,6 +561,92 @@ async function evaluateMemberExpr(
 
   if (!obj_val.properties.has(property_name)) {
     return runtimeError(`Property '${property_name}' does not exist on object`);
+  }
+
+  return ok(obj_val.properties.get(property_name)!);
+}
+
+async function evaluateOptionalChainExpr(
+  node: AST.OptionalChainExpr,
+  env: Environment,
+  module_loader?: ModuleLoader,
+): Promise<Result<RuntimeValue>> {
+  const object_result = await evaluate(node.object, env, module_loader);
+  if (!object_result.ok) return object_result;
+
+  const object_val = object_result.value;
+
+  if (object_val.type === ValueType.NULL) {
+    return ok({ type: ValueType.NULL } as NullValue);
+  }
+
+  if (node.computed) {
+    if (object_val.type !== ValueType.ARRAY) {
+      return typeError(`Cannot use bracket notation on non-array type ${object_val.type}`);
+    }
+
+    const index_result = await evaluate(node.property, env, module_loader);
+    if (!index_result.ok) return index_result;
+
+    const index_val = index_result.value;
+    if (index_val.type !== ValueType.NUMBER) {
+      return typeError(`Array index must be a number, got ${index_val.type}`);
+    }
+
+    const array_val = object_val as ArrayValue;
+    const idx = (index_val as NumberValue).value;
+
+    if (idx < 0 || idx >= array_val.elements.length) {
+      return ok({ type: ValueType.NULL } as NullValue);
+    }
+
+    return ok(array_val.elements[Math.floor(idx)]);
+  }
+
+  const property_name = (node.property as AST.Identifier).name;
+
+  if (object_val.type === ValueType.ARRAY) {
+    const array_val = object_val as ArrayValue;
+    const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
+      callFunction(callee, args, env, module_loader);
+    const array_methods = createArrayMethods(call_fn_with_env, isTruthy);
+
+    if (property_name in array_methods) {
+      return ok({
+        type: ValueType.NATIVE_FUNCTION,
+        name: property_name,
+        call: (args: RuntimeValue[]) => array_methods[property_name](array_val, ...args),
+      } as NativeFunctionValue);
+    }
+
+    return ok({ type: ValueType.NULL } as NullValue);
+  }
+
+  if (object_val.type === ValueType.STRING) {
+    const string_val = object_val as StringValue;
+    const call_fn_with_env = (callee: RuntimeValue, args: RuntimeValue[]) =>
+      callFunction(callee, args, env, module_loader);
+    const string_methods = createStringMethods(call_fn_with_env);
+
+    if (property_name in string_methods) {
+      return ok({
+        type: ValueType.NATIVE_FUNCTION,
+        name: property_name,
+        call: (args: RuntimeValue[]) => string_methods[property_name](string_val, ...args),
+      } as NativeFunctionValue);
+    }
+
+    return ok({ type: ValueType.NULL } as NullValue);
+  }
+
+  if (object_val.type !== ValueType.OBJECT) {
+    return typeError(`Cannot access property on non-object type ${object_val.type}`);
+  }
+
+  const obj_val = object_val as ObjectValue;
+
+  if (!obj_val.properties.has(property_name)) {
+    return ok({ type: ValueType.NULL } as NullValue);
   }
 
   return ok(obj_val.properties.get(property_name)!);

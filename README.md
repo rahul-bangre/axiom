@@ -133,6 +133,35 @@ result = match(x * 2,
 )
 ```
 
+### Optional Chaining
+
+```axiom
+// Safely access properties that might not exist
+user = { name: "Alice", profile: { age: 25 } }
+name = user?.name          // "Alice"
+email = user?.email        // null (no error)
+
+// Deep nesting
+age = user?.profile?.age   // 25
+city = user?.profile?.city // null
+
+// Works with null values
+empty = null
+result = empty?.field      // null (no error)
+
+// Computed access
+data = [1, 2, 3]
+value = data?.[1]          // 2
+missing = data?.[10]       // null (no error)
+
+// Real-world usage
+fn get_header(req) {
+  return req?.headers?.authorization
+}
+
+auth = get_header(null)  // null instead of error
+```
+
 ### Collections
 
 ```axiom
@@ -243,7 +272,8 @@ if (response.status >= 400) {
 
 Build REST APIs with declarative routing, middleware, and path parameters.
 
-> **Note:** HTTP server requires Deno runtime and only works via CLI (`deno run --allow-net`), not in the browser playground.
+> **Note:** HTTP server requires Deno runtime and only works via CLI (`deno run --allow-net`), not
+> in the browser playground.
 
 ```axiom
 // Define handlers
@@ -311,6 +341,11 @@ http.server(8000, config)
 - `print(...values)` - print values to stdout
 - `len(array | string)` - get length
 - `typeof value` - get runtime type
+
+### Operators
+
+- `?.` - optional chaining (safe property access, returns `null` if not found)
+- `?:` - ternary operator (conditional expression)
 
 ### Array Methods
 
@@ -592,6 +627,9 @@ result = user_schema.parse({name: 42})
 - [x] VSCode extension
 - [x] Module system
 - [x] HTTP client
+- [x] HTTP server (REST API)
+- [x] Optional chaining (`?.`)
+- [ ] Nullish coalescing (`??`)
 - [ ] REPL
 - [ ] File I/O
 

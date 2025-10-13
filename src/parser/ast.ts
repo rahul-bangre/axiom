@@ -14,6 +14,7 @@ export enum ASTNodeType {
   UNARY_EXPR,
   CALL_EXPR,
   MEMBER_EXPR,
+  OPTIONAL_CHAIN_EXPR,
   LAMBDA_EXPR,
   TERNARY_EXPR,
   AWAIT_EXPR,
@@ -116,6 +117,13 @@ export interface MemberExpr extends ASTNode {
   computed: boolean;
 }
 
+export interface OptionalChainExpr extends ASTNode {
+  type: ASTNodeType.OPTIONAL_CHAIN_EXPR;
+  object: Expression;
+  property: Expression;
+  computed: boolean;
+}
+
 export interface AwaitExpr extends ASTNode {
   type: ASTNodeType.AWAIT_EXPR;
   argument: Expression;
@@ -210,6 +218,7 @@ export type Expression =
   | UnaryExpr
   | CallExpr
   | MemberExpr
+  | OptionalChainExpr
   | AwaitExpr
   | MatchExpr;
 

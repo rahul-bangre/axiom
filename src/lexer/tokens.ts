@@ -50,6 +50,7 @@ export enum TokenType {
   ARROW,
   THIN_ARROW,
   QUESTION,
+  QUESTION_DOT,
 
   EOF,
 }

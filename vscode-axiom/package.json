@@ -2,7 +2,7 @@
   "name": "axiom",
   "displayName": "Axiom",
   "description": "Syntax highlighting for the Axiom programming language",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "axiom-lang",
   "engines": {
     "vscode": "^1.75.0"

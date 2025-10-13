@@ -181,6 +181,10 @@ export class Tokenizer {
       case ".":
         return this.makeToken(TokenType.DOT, char);
       case "?":
+        if (this.peek() === ".") {
+          this.advance();
+          return this.makeToken(TokenType.QUESTION_DOT, "?.");
+        }
         return this.makeToken(TokenType.QUESTION, char);
       default:
         throw new LexerError(`Unexpected character '${char}'`, this.line, this.column);
