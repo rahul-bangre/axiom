@@ -1,0 +1,147 @@
+use "./graph.ax" exposing { get_neighbors }
+
+export fn dijkstra(graph, start, visit_fn) {
+  unvisited = graph.nodes
+  
+  fn init_distances(nodes, i, dists, prev) {
+    if (i >= len(nodes)) {
+      return { distances: dists, previous: prev }
+    }
+    node = nodes[i]
+    dist = match(node,
+      start -> 0,
+      default -> 999999
+    )
+    new_dists = dists.concat([{ node: node, dist: dist }])
+    new_prev = prev.concat([{ node: node, prev: null }])
+    return init_distances(nodes, i + 1, new_dists, new_prev)
+  }
+  
+  init_result = init_distances(graph.nodes, 0, [], [])
+  distances = init_result.distances
+  previous = init_result.previous
+  
+  fn find_min_distance(unvis, dists) {
+    if (len(unvis) == 0) {
+      return null
+    }
+    
+    fn find_min_helper(i, min_node, min_dist) {
+      if (i >= len(unvis)) {
+        return min_node
+      }
+      
+      node = unvis[i]
+      node_dist = get_distance(node, dists)
+      
+      if (node_dist < min_dist) {
+        return find_min_helper(i + 1, node, node_dist)
+      }
+      return find_min_helper(i + 1, min_node, min_dist)
+    }
+    
+    first = unvis[0]
+    first_dist = get_distance(first, dists)
+    return find_min_helper(1, first, first_dist)
+  }
+  
+  fn process_graph(unvis, dists, prev) {
+    if (len(unvis) == 0) {
+      return { distances: dists, previous: prev }
+    }
+    
+    current = find_min_distance(unvis, dists)
+    if (current == null) {
+      return { distances: dists, previous: prev }
+    }
+    
+    visit_fn(current)
+    
+    new_unvisited = unvis.filter((n) => n != current)
+    
+    neighbors = get_neighbors(graph, current)
+    current_dist = get_distance(current, dists)
+    
+    fn update_neighbors(i, d, p) {
+      if (i >= len(neighbors)) {
+        return { distances: d, previous: p }
+      }
+      
+      edge = neighbors[i]
+      neighbor = edge.to
+      weight = edge.weight
+      
+      alt_dist = current_dist + weight
+      neighbor_dist = get_distance(neighbor, d)
+      
+      should_update = alt_dist < neighbor_dist
+      new_d = should_update ? set_distance(neighbor, alt_dist, d) : d
+      new_p = should_update ? set_previous(neighbor, current, p) : p
+      
+      return update_neighbors(i + 1, new_d, new_p)
+    }
+    
+    update_result = update_neighbors(0, dists, prev)
+    
+    return process_graph(new_unvisited, update_result.distances, update_result.previous)
+  }
+  
+  return process_graph(unvisited, distances, previous)
+}
+
+fn get_distance(node, distances) {
+  fn find(i) {
+    if (i >= len(distances)) {
+      return 999999
+    }
+    if (distances[i].node == node) {
+      return distances[i].dist
+    }
+    return find(i + 1)
+  }
+  return find(0)
+}
+
+fn set_distance(node, new_dist, distances) {
+  return distances.map((entry) =>
+    entry.node == node ? { node: node, dist: new_dist } : entry
+  )
+}
+
+fn set_previous(node, prev_node, previous) {
+  return previous.map((entry) =>
+    entry.node == node ? { node: node, prev: prev_node } : entry
+  )
+}
+
+export fn get_shortest_path(previous, target) {
+  path = []
+  current = target
+  
+  fn build_path(node) {
+    if (node == null) {
+      return path
+    }
+    
+    path = [node].concat(path)
+    prev = get_prev(node, previous)
+    
+    return build_path(prev)
+  }
+  
+  return build_path(current)
+}
+
+fn get_prev(node, previous) {
+  fn find(i) {
+    if (i >= len(previous)) {
+      return null
+    }
+    if (previous[i].node == node) {
+      return previous[i].prev
+    }
+    return find(i + 1)
+  }
+  return find(0)
+}
+

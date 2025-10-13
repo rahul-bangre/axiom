@@ -1,0 +1,116 @@
+use "./graph.ax" as graph
+use "./bfs.ax" exposing { bfs }
+use "./dfs.ax" exposing { dfs, dfs_path }
+use "./dijkstra.ax" exposing { dijkstra, get_shortest_path }
+use "./topological.ax" exposing { topological_sort, has_cycle }
+
+print("=== Graph Algorithms in Axiom ===")
+print("")
+
+print("Building a social network graph...")
+g0 = graph.create_graph()
+g1 = graph.add_edge(g0, "Alice", "Bob", 1)
+g2 = graph.add_edge(g1, "Alice", "Charlie", 1)
+g3 = graph.add_edge(g2, "Bob", "David", 1)
+g4 = graph.add_edge(g3, "Charlie", "David", 1)
+g5 = graph.add_edge(g4, "Charlie", "Eve", 1)
+social_graph = graph.add_edge(g5, "David", "Eve", 1)
+
+print("Nodes:", social_graph.nodes)
+print("")
+
+print("--- Breadth-First Search (BFS) from Alice ---")
+visit_bfs = (node) => {
+  print("  Visiting:", node)
+  return null
+}
+bfs_order = bfs(social_graph, "Alice", visit_bfs)
+print("BFS Order:", bfs_order)
+print("")
+
+print("--- Depth-First Search (DFS) from Alice ---")
+visit_dfs = (node) => {
+  print("  Exploring:", node)
+  return null
+}
+dfs_order = dfs(social_graph, "Alice", visit_dfs)
+print("DFS Order:", dfs_order)
+print("")
+
+print("--- DFS Path Finding (Alice to Eve) ---")
+visit_path = (node) => {
+  print("  Checking:", node)
+  return null
+}
+path = dfs_path(social_graph, "Alice", "Eve", visit_path)
+print("Path found:", path)
+print("")
+
+print("Building a weighted city road network...")
+c0 = graph.create_graph()
+c1 = graph.add_edge(c0, "A", "B", 4)
+c2 = graph.add_edge(c1, "A", "C", 2)
+c3 = graph.add_edge(c2, "B", "D", 5)
+c4 = graph.add_edge(c3, "C", "B", 1)
+c5 = graph.add_edge(c4, "C", "D", 8)
+c6 = graph.add_edge(c5, "C", "E", 10)
+city_graph = graph.add_edge(c6, "D", "E", 2)
+
+print("--- Dijkstra's Shortest Path from A ---")
+visit_dijkstra = (node) => {
+  print("  Processing:", node)
+  return null
+}
+result = dijkstra(city_graph, "A", visit_dijkstra)
+distances = result.distances
+previous = result.previous
+
+print("")
+print("Shortest distances from A:")
+fn print_distances(i) {
+  if (i >= len(distances)) {
+    return null
+  }
+  entry = distances[i]
+  print("  To", entry.node, "= distance", entry.dist)
+  return print_distances(i + 1)
+}
+print_distances(0)
+
+print("")
+print("Shortest path from A to E:")
+shortest_path = get_shortest_path(previous, "E")
+print("  Path:", shortest_path)
+print("")
+
+print("Building a task dependency graph...")
+t0 = graph.create_graph()
+t1 = graph.add_edge(t0, "install", "compile", 1)
+t2 = graph.add_edge(t1, "compile", "test", 1)
+t3 = graph.add_edge(t2, "compile", "lint", 1)
+t4 = graph.add_edge(t3, "test", "deploy", 1)
+task_graph = graph.add_edge(t4, "lint", "deploy", 1)
+
+print("--- Topological Sort (Task Execution Order) ---")
+visit_topo = (node) => {
+  print("  Ordering:", node)
+  return null
+}
+topo_order = topological_sort(task_graph, visit_topo)
+print("")
+print("Execution order:", topo_order)
+print("")
+
+print("=== Summary ===")
+print("✓ BFS: Level-order traversal for shortest paths (unweighted)")
+print("✓ DFS: Explores deeply, great for pathfinding and connectivity")  
+print("✓ Dijkstra: Finds shortest weighted paths efficiently")
+print("✓ Topological Sort: Orders tasks by dependencies")
+print("")
+print("Demonstrating Axiom's functional programming capabilities:"
+)
+print("- Immutable data structures with copy-on-write")
+print("- Pure functions and recursion")
+print("- Higher-order functions (callbacks for visiting)")
+print("- Pattern matching for control flow")
+

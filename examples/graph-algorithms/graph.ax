@@ -1,0 +1,30 @@
+export fn create_graph() {
+  return {
+    edges: [],
+    nodes: []
+  }
+}
+
+export fn add_node(graph, node) {
+  exists = graph.nodes.some((n) => n == node)
+  if (!exists) {
+    new_nodes = graph.nodes.concat([node])
+    return { edges: graph.edges, nodes: new_nodes }
+  }
+  return graph
+}
+
+export fn add_edge(graph, from, to, weight) {
+  graph_with_from = add_node(graph, from)
+  graph_with_both = add_node(graph_with_from, to)
+  
+  edge = { from: from, to: to, weight: weight }
+  new_edges = graph_with_both.edges.concat([edge])
+  
+  return { edges: new_edges, nodes: graph_with_both.nodes }
+}
+
+export fn get_neighbors(graph, node) {
+  return graph.edges.filter((edge) => edge.from == node)
+}
+

@@ -1,3 +1,21 @@
+// Import example files directly using ?raw suffix
+import leetcodeRaw from "../../../examples/leetcode.ax?raw";
+import asyncDemoRaw from "../../../examples/async-demo.ax?raw";
+import matchDemoRaw from "../../../examples/match-demo.ax?raw";
+
+// Module examples
+import moduleMainRaw from "../../../examples/modules/main.ax?raw";
+import moduleMathRaw from "../../../examples/modules/math-utils.ax?raw";
+import moduleStringRaw from "../../../examples/modules/string-utils.ax?raw";
+
+// Graph algorithm examples
+import graphMainRaw from "../../../examples/graph-algorithms/main.ax?raw";
+import graphGraphRaw from "../../../examples/graph-algorithms/graph.ax?raw";
+import graphBfsRaw from "../../../examples/graph-algorithms/bfs.ax?raw";
+import graphDfsRaw from "../../../examples/graph-algorithms/dfs.ax?raw";
+import graphDijkstraRaw from "../../../examples/graph-algorithms/dijkstra.ax?raw";
+import graphTopoRaw from "../../../examples/graph-algorithms/topological.ax?raw";
+
 export interface Example {
   name: string;
   code?: string;
@@ -181,57 +199,34 @@ fn fizzbuzz(n) {
 fizzbuzz(20)`,
   },
   {
+    name: "LeetCode Problems",
+    code: leetcodeRaw,
+  },
+  {
+    name: "Async/Await",
+    code: asyncDemoRaw,
+  },
+  {
+    name: "Pattern Matching",
+    code: matchDemoRaw,
+  },
+  {
     name: "Module System",
     files: {
-      "main.ax": `// importing from other modules
-use "./math.ax" exposing { add, multiply }
-use "./utils.ax" as utils
-
-print("=== Module System Demo ===")
-
-x = 5
-y = 10
-
-sum = add(x, y)
-product = multiply(x, y)
-
-print("add(5, 10) =", sum)
-print("multiply(5, 10) =", product)
-
-greeting = utils.greet("Axiom")
-print(greeting)
-
-doubled = utils.double(sum)
-print("double(sum) =", doubled)`,
-      "math.ax": `// math utility functions
-export fn add(a, b) {
-  return a + b
-}
-
-export fn multiply(a, b) {
-  return a * b
-}
-
-export fn power(base, exp) {
-  if (exp == 0) {
-    return 1
-  }
-  return base * power(base, exp - 1)
-}`,
-      "utils.ax": `// general utility functions
-use "./math.ax" exposing { multiply }
-
-export fn greet(name) {
-  return "Hello, " + name + "!"
-}
-
-export fn double(n) {
-  return multiply(n, 2)
-}
-
-export fn triple(n) {
-  return multiply(n, 3)
-}`,
+      "main.ax": moduleMainRaw,
+      "math-utils.ax": moduleMathRaw,
+      "string-utils.ax": moduleStringRaw,
+    },
+  },
+  {
+    name: "Graph Algorithms",
+    files: {
+      "main.ax": graphMainRaw,
+      "graph.ax": graphGraphRaw,
+      "bfs.ax": graphBfsRaw,
+      "dfs.ax": graphDfsRaw,
+      "dijkstra.ax": graphDijkstraRaw,
+      "topological.ax": graphTopoRaw,
     },
   },
 ];

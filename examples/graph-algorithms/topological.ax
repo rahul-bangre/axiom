@@ -1,0 +1,110 @@
+use "./graph.ax" exposing { get_neighbors }
+
+export fn topological_sort(graph, visit_fn) {
+  visited = []
+  result_stack = []
+  
+  fn visit(node, vis, stack) {
+    already_visited = vis.some((v) => v == node)
+    if (already_visited) {
+      return { visited: vis, stack: stack }
+    }
+    
+    visit_fn(node)
+    
+    new_visited = vis.concat([node])
+    neighbors = get_neighbors(graph, node)
+    
+    fn process_neighbors(i, v, s) {
+      if (i >= len(neighbors)) {
+        return { visited: v, stack: s }
+      }
+      
+      neighbor = neighbors[i].to
+      result = visit(neighbor, v, s)
+      
+      return process_neighbors(i + 1, result.visited, result.stack)
+    }
+    
+    result = process_neighbors(0, new_visited, stack)
+    new_stack = [node].concat(result.stack)
+    
+    return { visited: result.visited, stack: new_stack }
+  }
+  
+  fn visit_all(nodes, i, vis, stack) {
+    if (i >= len(nodes)) {
+      return stack
+    }
+    
+    node = nodes[i]
+    already_visited = vis.some((v) => v == node)
+    
+    if (!already_visited) {
+      result = visit(node, vis, stack)
+      return visit_all(nodes, i + 1, result.visited, result.stack)
+    }
+    
+    return visit_all(nodes, i + 1, vis, stack)
+  }
+  
+  return visit_all(graph.nodes, 0, visited, result_stack)
+}
+
+export fn has_cycle(graph) {
+  visited = []
+  rec_stack = []
+  
+  fn is_cyclic(node) {
+    in_rec_stack = rec_stack.some((n) => n == node)
+    if (in_rec_stack) {
+      return true
+    }
+    
+    already_visited = visited.some((v) => v == node)
+    if (already_visited) {
+      return false
+    }
+    
+    visited = visited.concat([node])
+    rec_stack = rec_stack.concat([node])
+    
+    neighbors = get_neighbors(graph, node)
+    
+    fn check_neighbors(i) {
+      if (i >= len(neighbors)) {
+        return false
+      }
+      
+      neighbor = neighbors[i].to
+      
+      if (is_cyclic(neighbor)) {
+        return true
+      }
+      
+      return check_neighbors(i + 1)
+    }
+    
+    has_cycle = check_neighbors(0)
+    rec_stack = rec_stack.filter((n) => n != node)
+    
+    return has_cycle
+  }
+  
+  fn check_all_nodes(nodes, i) {
+    if (i >= len(nodes)) {
+      return false
+    }
+    
+    node = nodes[i]
+    
+    if (is_cyclic(node)) {
+      return true
+    }
+    
+    return check_all_nodes(nodes, i + 1)
+  }
+  
+  return check_all_nodes(graph.nodes, 0)
+}
+
