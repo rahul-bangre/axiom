@@ -39,7 +39,7 @@ function runtimeValueToJS(value: RuntimeValue): any {
   }
 }
 
-function jsToRuntimeValue(value: any): RuntimeValue {
+export function jsToRuntimeValue(value: any): RuntimeValue {
   if (value === null || value === undefined) {
     return { type: ValueType.NULL } as NullValue;
   }

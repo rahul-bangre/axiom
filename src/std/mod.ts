@@ -3,3 +3,4 @@ export * from "./math.ts";
 export * from "./array.ts";
 export * from "./json.ts";
 export * from "./schema.ts";
+export * from "./http.ts";

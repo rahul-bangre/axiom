@@ -61,6 +61,7 @@ export interface NativeFunctionValue extends RuntimeValue {
   type: ValueType.NATIVE_FUNCTION;
   name: string;
   call: (args: RuntimeValue[]) => Promise<Result<RuntimeValue>>;
+  return_type?: string;
 }
 
 export interface AsyncValue extends RuntimeValue {

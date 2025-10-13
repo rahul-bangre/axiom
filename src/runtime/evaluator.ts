@@ -350,7 +350,15 @@ async function callFunction(
   }
 
   if (callee.type === ValueType.NATIVE_FUNCTION) {
-    return await (callee as NativeFunctionValue).call(args);
+    const native_func = callee as NativeFunctionValue;
+    const result = await native_func.call(args);
+    if (!result.ok) return result;
+
+    if (native_func.return_type && native_func.return_type.startsWith("async")) {
+      return ok(makeAsyncValue(Promise.resolve(result.value)));
+    }
+
+    return result;
   }
 
   const func = callee as FunctionValue;

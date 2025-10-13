@@ -2,6 +2,7 @@
 import leetcodeRaw from "../../../examples/leetcode.ax?raw";
 import asyncDemoRaw from "../../../examples/async-demo.ax?raw";
 import matchDemoRaw from "../../../examples/match-demo.ax?raw";
+import httpDemoRaw from "../../../examples/http-demo.ax?raw";
 
 // Module examples
 import moduleMainRaw from "../../../examples/modules/main.ax?raw";
@@ -205,6 +206,10 @@ fizzbuzz(20)`,
   {
     name: "Async/Await",
     code: asyncDemoRaw,
+  },
+  {
+    name: "HTTP Client",
+    code: httpDemoRaw,
   },
   {
     name: "Pattern Matching",

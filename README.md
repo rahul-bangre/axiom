@@ -10,7 +10,7 @@ A minimal, typed, functional language built on immutable truth.
 - ⚡ **Clean syntax** - no semicolons, minimal keywords
 - 🚀 **Fast execution** - built with Deno + TypeScript
 - 🔄 **Async/Await** - asynchronous computations as values
-- ✨ **Rich standard library** - array methods, string methods, schema validation
+- ✨ **Rich standard library** - array methods, string methods, schema validation, HTTP client
 - 🌐 **Web playground** - interactive browser-based editor
 
 ## Philosophy
@@ -205,6 +205,39 @@ admin_schema = user_schema.extend({
 })
 ```
 
+### HTTP Client
+
+```axiom
+// GET request
+result = await http.get("https://api.example.com/users/1")
+
+if (!result.ok) {
+  print("Network error:", result.error)
+  return null
+}
+
+response = result.value
+print("Status:", response.status)
+
+// Parse JSON response
+json_result = await response.json()
+if (json_result.ok) {
+  user = json_result.value
+  print("User name:", user.name)
+}
+
+// POST with JSON body
+post_data = {title: "Hello", body: "World", userId: 1}
+post_result = await http.post("https://api.example.com/posts", {
+  body: json.stringify(post_data)
+})
+
+// HTTP errors are part of the response
+if (response.status >= 400) {
+  print("HTTP error:", response.status)
+}
+```
+
 ## Built-in Functions
 
 ### Core Functions
@@ -271,6 +304,21 @@ admin_schema = user_schema.extend({
 - `schema.lazy(fn)` - recursive schema
 - `schema.any()` - accept any value
 
+### HTTP Client
+
+- `http.get(url)` - perform GET request
+- `http.post(url, options?)` - perform POST request
+- `http.put(url, options?)` - perform PUT request
+- `http.delete(url)` - perform DELETE request
+- `http.patch(url, options?)` - perform PATCH request
+
+All HTTP methods return `async Result<Response>` where:
+
+- `Response` contains: `status` (int), `headers` (object), `body` (string), `json()` (async
+  function)
+- Network errors are captured in `Result.error`
+- HTTP status codes (like 404) are part of the successful `Response`
+
 ## Development
 
 ```bash
@@ -312,8 +360,10 @@ See the `examples/` directory:
 
 - `leetcode.ax` - LeetCode problem solutions
 - `async-demo.ax` - async/await demonstration
+- `http-demo.ax` - HTTP client with full CRUD operations
 - `match-demo.ax` - pattern matching examples
-- `schema-validation.ax` - schema validation examples
+- `modules/` - module system demonstration
+- `graph-algorithms/` - graph traversal and pathfinding algorithms
 
 ## Playground
 
@@ -399,10 +449,10 @@ result = user_schema.parse({name: 42})
 - [x] Async/await
 - [x] Web playground
 - [x] VSCode extension
+- [x] Module system
+- [x] HTTP client
 - [ ] REPL
-- [ ] Module system
 - [ ] File I/O
-- [ ] HTTP client
 
 ## Philosophy & Design
 

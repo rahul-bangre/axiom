@@ -1,0 +1,118 @@
+print("=== HTTP Client Demo ===")
+print("")
+
+print("--- Example 1: Simple GET Request ---")
+result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+
+if (!result.ok) {
+  print("Network error:", result.error)
+  return null
+}
+
+response = result.value
+print("Status:", response.status)
+body_preview = response.body.substring(0, 100)
+print("Body preview:", body_preview + "...")
+
+json_result = await response.json()
+if (!json_result.ok) {
+  print("JSON parse error:", json_result.error)
+  return null
+}
+
+user = json_result.value
+print("User name:", user.name)
+print("User email:", user.email)
+address = user.address
+print("User city:", address.city)
+
+print("")
+print("--- Example 2: POST Request with JSON Body ---")
+post_data = {
+  title: "Hello from Axiom",
+  body: "Testing HTTP POST",
+  userId: 1
+}
+
+post_result = await http.post("https://jsonplaceholder.typicode.com/posts", {
+  body: json.stringify(post_data)
+})
+
+if (!post_result.ok) {
+  print("Network error:", post_result.error)
+  return null
+}
+
+post_response = post_result.value
+print("Status:", post_response.status)
+
+created_result = await post_response.json()
+if (created_result.ok) {
+  created = created_result.value
+  print("Created post with ID:", created.id)
+}
+
+print("")
+print("--- Example 3: Handling HTTP Errors (404) ---")
+not_found_result = await http.get("https://jsonplaceholder.typicode.com/users/999999")
+
+if (!not_found_result.ok) {
+  print("Network error:", not_found_result.error)
+  return null
+}
+
+not_found_response = not_found_result.value
+print("Status:", not_found_response.status)
+
+if (not_found_response.status >= 400) {
+  print("HTTP error detected!")
+  print("Response body:", not_found_response.body)
+}
+
+if (not_found_response.status < 400) {
+  print("Request succeeded")
+}
+
+print("")
+print("--- Example 4: PUT Request ---")
+update_data = {
+  id: 1,
+  title: "Updated Title",
+  body: "Updated body content",
+  userId: 1
+}
+
+put_result = await http.put("https://jsonplaceholder.typicode.com/posts/1", {
+  body: json.stringify(update_data)
+})
+
+if (put_result.ok) {
+  put_response = put_result.value
+  print("PUT Status:", put_response.status)
+  updated_result = await put_response.json()
+  if (updated_result.ok) {
+    updated = updated_result.value
+    print("Updated resource ID:", updated.id)
+  }
+}
+
+print("")
+print("--- Example 5: DELETE Request ---")
+delete_result = await http.delete("https://jsonplaceholder.typicode.com/posts/1")
+
+if (delete_result.ok) {
+  delete_response = delete_result.value
+  print("DELETE Status:", delete_response.status)
+  print("Response:", delete_response.body)
+}
+
+print("")
+print("=== Summary ===")
+print("✓ GET: Fetch data from APIs")
+print("✓ POST: Send data to servers")
+print("✓ PUT: Update existing resources")
+print("✓ DELETE: Remove resources")
+print("✓ PATCH: Partial updates")
+print("")
+print("All HTTP methods return Result<Response> for safe error handling!")
+
