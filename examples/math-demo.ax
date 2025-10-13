@@ -1,0 +1,171 @@
+use "std:math" as math
+
+print("=== Axiom Math Module Demo ===")
+print("")
+
+print("1. Constants:")
+print("  π (pi):", math.pi)
+print("  e:", math.e)
+print("  ∞ (infinity):", math.infty)
+print("")
+
+print("2. Global Math Functions:")
+print("  abs(-42):", abs(-42))
+print("  abs(42):", abs(42))
+print("  min(5, 2, 8, 1):", min(5, 2, 8, 1))
+print("  max(5, 2, 8, 1):", max(5, 2, 8, 1))
+print("")
+
+print("3. Clamping:")
+value1 = 5
+value2 = -5
+value3 = 15
+print("  clamp(5, 0, 10):", math.clamp(value1, 0, 10))
+print("  clamp(-5, 0, 10):", math.clamp(value2, 0, 10))
+print("  clamp(15, 0, 10):", math.clamp(value3, 0, 10))
+print("")
+
+print("4. Powers and Roots:")
+print("  sqrt(16):", math.sqrt(16))
+print("  sqrt(2):", math.sqrt(2))
+print("  pow(2, 8):", math.pow(2, 8))
+print("  pow(16, 0.5):", math.pow(16, 0.5))
+print("")
+
+print("5. Exponential and Logarithm:")
+print("  exp(1):", math.exp(1))
+print("  exp(2):", math.exp(2))
+print("  log(math.e):", math.log(math.e))
+print("  log(100, 10):", math.log(100, 10))
+print("  log(8, 2):", math.log(8, 2))
+print("")
+
+print("6. Sign Function:")
+print("  sign(42):", math.sign(42))
+print("  sign(-42):", math.sign(-42))
+print("  sign(0):", math.sign(0))
+print("")
+
+print("7. Rounding Functions:")
+num = 3.7
+neg_num = -3.7
+print("  round(3.7):", math.round(num))
+print("  floor(3.7):", math.floor(num))
+print("  ceil(3.7):", math.ceil(num))
+print("  trunc(3.7):", math.trunc(num))
+print("  round(-3.7):", math.round(neg_num))
+print("  floor(-3.7):", math.floor(neg_num))
+print("  ceil(-3.7):", math.ceil(neg_num))
+print("  trunc(-3.7):", math.trunc(neg_num))
+print("")
+
+print("8. Random Numbers:")
+print("  random():", math.random())
+print("  random():", math.random())
+print("  random():", math.random())
+print("")
+
+print("9. Practical Example - Circle Area:")
+fn circle_area(radius: float): float {
+  return math.pi * math.pow(radius, 2)
+}
+
+radius1 = 5
+area1 = circle_area(radius1)
+print("  Circle with radius", radius1, "has area:", area1)
+print("  Rounded area:", math.round(area1))
+print("")
+
+print("10. Practical Example - Distance Formula:")
+fn distance(x1: float, y1: float, x2: float, y2: float): float {
+  dx = x2 - x1
+  dy = y2 - y1
+  return math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
+}
+
+x1_coord = 0
+y1_coord = 0
+x2_coord = 3
+y2_coord = 4
+dist = distance(x1_coord, y1_coord, x2_coord, y2_coord)
+print("  Distance from (0,0) to (3,4):", dist)
+print("")
+
+print("11. Practical Example - Compound Interest:")
+fn compound_interest(principal: float, rate: float, years: int): float {
+  return principal * math.pow(1 + rate, years)
+}
+
+principal = 1000
+rate = 0.05
+years = 10
+final_amount = compound_interest(principal, rate, years)
+print("  $1000 at 5% for 10 years:", math.round(final_amount))
+print("")
+
+print("12. Practical Example - Random Range:")
+fn random_range(min_val: int, max_val: int): int {
+  range = max_val - min_val
+  random_float = math.random()
+  scaled = random_float * range
+  shifted = scaled + min_val
+  return math.floor(shifted)
+}
+
+print("  Random number between 1 and 10:")
+print("   ", random_range(1, 10))
+print("   ", random_range(1, 10))
+print("   ", random_range(1, 10))
+print("")
+
+print("13. Practical Example - Temperature Bounds:")
+fn normalize_temperature(temp: float): float {
+  return math.clamp(temp, -50, 50)
+}
+
+temp1 = 25
+temp2 = -100
+temp3 = 100
+print("  Normalize temp 25:", normalize_temperature(temp1))
+print("  Normalize temp -100:", normalize_temperature(temp2))
+print("  Normalize temp 100:", normalize_temperature(temp3))
+print("")
+
+print("14. Practical Example - Statistics:")
+fn mean(values: array): float {
+  fn sum_helper(arr: array, i: int, acc: float): float {
+    if (i >= len(arr)) {
+      return acc
+    }
+    return sum_helper(arr, i + 1, acc + arr[i])
+  }
+  
+  total = sum_helper(values, 0, 0)
+  return total / len(values)
+}
+
+fn variance(values: array, mean_val: float): float {
+  fn variance_helper(arr: array, mean_v: float, i: int, acc: float): float {
+    if (i >= len(arr)) {
+      return acc / len(arr)
+    }
+    diff = arr[i] - mean_v
+    return variance_helper(arr, mean_v, i + 1, acc + math.pow(diff, 2))
+  }
+  
+  return variance_helper(values, mean_val, 0, 0)
+}
+
+data = [2, 4, 4, 4, 5, 5, 7, 9]
+mean_val = mean(data)
+var_val = variance(data, mean_val)
+std_dev = math.sqrt(var_val)
+
+print("  Data:", data)
+print("  Mean:", mean_val)
+print("  Variance:", var_val)
+print("  Standard Deviation:", std_dev)
+print("")
+
+print("=== Demo Complete ===")
+

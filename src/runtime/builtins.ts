@@ -69,12 +69,64 @@ const len: NativeFunctionValue = {
   },
 };
 
+const abs: NativeFunctionValue = {
+  type: ValueType.NATIVE_FUNCTION,
+  name: "abs",
+  call: async (args: RuntimeValue[]) => {
+    if (args.length !== 1) {
+      return runtimeError("abs() expects exactly 1 argument");
+    }
+    if (args[0].type !== ValueType.NUMBER) {
+      return runtimeError("abs() requires a number argument");
+    }
+    const value = (args[0] as any).value;
+    return ok({ type: ValueType.NUMBER, value: Math.abs(value) });
+  },
+};
+
+const min: NativeFunctionValue = {
+  type: ValueType.NATIVE_FUNCTION,
+  name: "min",
+  call: async (args: RuntimeValue[]) => {
+    if (args.length === 0) {
+      return runtimeError("min() requires at least 1 argument");
+    }
+    for (const arg of args) {
+      if (arg.type !== ValueType.NUMBER) {
+        return runtimeError("min() requires all arguments to be numbers");
+      }
+    }
+    const values = args.map((arg) => (arg as any).value);
+    return ok({ type: ValueType.NUMBER, value: Math.min(...values) });
+  },
+};
+
+const max: NativeFunctionValue = {
+  type: ValueType.NATIVE_FUNCTION,
+  name: "max",
+  call: async (args: RuntimeValue[]) => {
+    if (args.length === 0) {
+      return runtimeError("max() requires at least 1 argument");
+    }
+    for (const arg of args) {
+      if (arg.type !== ValueType.NUMBER) {
+        return runtimeError("max() requires all arguments to be numbers");
+      }
+    }
+    const values = args.map((arg) => (arg as any).value);
+    return ok({ type: ValueType.NUMBER, value: Math.max(...values) });
+  },
+};
+
 /* create a global environment with built-in functions */
 export function createGlobalEnv(): Environment {
   const global_env = new Environment();
 
   global_env.define("print", print);
   global_env.define("len", len);
+  global_env.define("abs", abs);
+  global_env.define("min", min);
+  global_env.define("max", max);
 
   const json_object: ObjectValue = {
     type: ValueType.OBJECT,

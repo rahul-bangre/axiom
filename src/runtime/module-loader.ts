@@ -6,6 +6,7 @@ import { evaluate } from "./evaluator.ts";
 import { ok, Result, runtimeError } from "../types/result.ts";
 import { dirname, isAbsolute, join, resolve } from "https://deno.land/std@0.208.0/path/mod.ts";
 import { fs_namespace } from "../std/fs.ts";
+import { math_namespace } from "../std/math.ts";
 
 export interface ModuleExports {
   exports: Map<string, RuntimeValue>;
@@ -85,6 +86,7 @@ export class ModuleLoader {
 
     const std_modules: Record<string, Record<string, RuntimeValue>> = {
       fs: fs_namespace,
+      math: math_namespace,
     };
 
     if (!(module_name in std_modules)) {

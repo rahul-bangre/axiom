@@ -417,6 +417,92 @@ print("Found", error_count, "errors")
 - `fs.readJson(path)` - Read and parse JSON file, returns `Result<object>`
 - `fs.writeJson(path, data, indent?)` - Write object as JSON, returns `Result<null>`
 
+### Math (std:math)
+
+Mathematical operations, constants, and utilities.
+
+```axiom
+use "std:math" as math
+
+// Constants
+pi = math.pi            // 3.141592653589793
+e = math.e              // 2.718281828459045
+infinity = math.infty   // Infinity
+
+// Global math functions (always available)
+abs_val = abs(-42)      // 42
+minimum = min(5, 2, 8)  // 2
+maximum = max(5, 2, 8)  // 8
+
+// Clamping
+clamped = math.clamp(15, 0, 10)  // 10
+
+// Powers and roots
+square_root = math.sqrt(16)      // 4
+power = math.pow(2, 8)           // 256
+
+// Exponential and logarithm
+exp_val = math.exp(1)            // e
+natural_log = math.log(math.e)   // 1
+log_base_10 = math.log(100, 10)  // 2
+
+// Sign
+sign_val = math.sign(-42)        // -1
+
+// Rounding
+rounded = math.round(3.7)        // 4
+floored = math.floor(3.7)        // 3
+ceiled = math.ceil(3.1)          // 4
+truncated = math.trunc(3.9)      // 3
+
+// Random
+random_val = math.random()       // [0, 1)
+
+// Practical example: circle area
+fn circle_area(radius: float): float {
+  return math.pi * math.pow(radius, 2)
+}
+area = circle_area(5)  // 78.54
+
+// Practical example: distance formula
+fn distance(x1: float, y1: float, x2: float, y2: float): float {
+  dx = x2 - x1
+  dy = y2 - y1
+  return math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
+}
+dist = distance(0, 0, 3, 4)  // 5.0
+```
+
+**Available Functions:**
+
+**Global (always available):**
+
+- `abs(x)` - Absolute value
+- `min(...args)` - Minimum of multiple numbers
+- `max(...args)` - Maximum of multiple numbers
+
+**Imported from `std:math`:**
+
+_Constants:_
+
+- `math.pi` - π (3.14159...)
+- `math.e` - Euler's number (2.71828...)
+- `math.infty` - Infinity
+
+_Functions:_
+
+- `math.clamp(x, min, max)` - Clamp value to range
+- `math.sqrt(x)` - Square root
+- `math.pow(x, y)` - Exponentiation (x^y)
+- `math.exp(x)` - e^x
+- `math.log(x, base?)` - Logarithm (natural log if base omitted)
+- `math.sign(x)` - Sign of number (-1, 0, or 1)
+- `math.round(x)` - Round to nearest integer
+- `math.floor(x)` - Round down to integer
+- `math.ceil(x)` - Round up to integer
+- `math.trunc(x)` - Remove decimal part
+- `math.random()` - Random number in [0, 1)
+
 ## Built-in Functions
 
 ### Core Functions
@@ -424,6 +510,9 @@ print("Found", error_count, "errors")
 - `print(...values)` - print values to stdout
 - `len(array | string)` - get length
 - `typeof value` - get runtime type
+- `abs(x)` - absolute value of a number
+- `min(...args)` - minimum of multiple numbers
+- `max(...args)` - maximum of multiple numbers
 
 ### Operators
 
