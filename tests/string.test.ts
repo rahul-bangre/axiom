@@ -4,19 +4,19 @@ import { Parser } from "@parser";
 import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
 import { Result } from "../src/types/result.ts";
 
-function run(source_code: string): Result<RuntimeValue> {
+async function run(source_code: string): Promise<Result<RuntimeValue>> {
   const tokenizer = new Tokenizer(source_code);
   const tokens = tokenizer.tokenize();
   const parser = new Parser(tokens);
   const ast_node = parser.parse();
   const global_env = createGlobalEnv();
-  return evaluate(ast_node, global_env);
+  return await evaluate(ast_node, global_env);
 }
 
 // ========== split() ==========
 
-Deno.test("String - split with delimiter", () => {
-  const result = run('"hello,world".split(",")');
+Deno.test("String - split with delimiter", async () => {
+  const result = await run('"hello,world".split(",")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.ARRAY);
@@ -27,8 +27,8 @@ Deno.test("String - split with delimiter", () => {
   }
 });
 
-Deno.test("String - split without delimiter (chars)", () => {
-  const result = run('"abc".split()');
+Deno.test("String - split without delimiter (chars)", async () => {
+  const result = await run('"abc".split()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.ARRAY);
@@ -40,8 +40,8 @@ Deno.test("String - split without delimiter (chars)", () => {
   }
 });
 
-Deno.test("String - split with space", () => {
-  const result = run('"hello world from axiom".split(" ")');
+Deno.test("String - split with space", async () => {
+  const result = await run('"hello world from axiom".split(" ")');
   assertEquals(result.ok, true);
   if (result.ok) {
     const arr = (result.value as any).elements;
@@ -53,24 +53,24 @@ Deno.test("String - split with space", () => {
 
 // ========== trim() ==========
 
-Deno.test("String - trim", () => {
-  const result = run('"  hello  ".trim()');
+Deno.test("String - trim", async () => {
+  const result = await run('"  hello  ".trim()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello");
   }
 });
 
-Deno.test("String - trimStart", () => {
-  const result = run('"  hello  ".trimStart()');
+Deno.test("String - trimStart", async () => {
+  const result = await run('"  hello  ".trimStart()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello  ");
   }
 });
 
-Deno.test("String - trimEnd", () => {
-  const result = run('"  hello  ".trimEnd()');
+Deno.test("String - trimEnd", async () => {
+  const result = await run('"  hello  ".trimEnd()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "  hello");
@@ -79,16 +79,16 @@ Deno.test("String - trimEnd", () => {
 
 // ========== case conversion ==========
 
-Deno.test("String - toUpperCase", () => {
-  const result = run('"hello world".toUpperCase()');
+Deno.test("String - toUpperCase", async () => {
+  const result = await run('"hello world".toUpperCase()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "HELLO WORLD");
   }
 });
 
-Deno.test("String - toLowerCase", () => {
-  const result = run('"HELLO WORLD".toLowerCase()');
+Deno.test("String - toLowerCase", async () => {
+  const result = await run('"HELLO WORLD".toLowerCase()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello world");
@@ -97,16 +97,16 @@ Deno.test("String - toLowerCase", () => {
 
 // ========== replace() ==========
 
-Deno.test("String - replace (first occurrence)", () => {
-  const result = run('"hello hello".replace("hello", "hi")');
+Deno.test("String - replace (first occurrence)", async () => {
+  const result = await run('"hello hello".replace("hello", "hi")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hi hello");
   }
 });
 
-Deno.test("String - replaceAll", () => {
-  const result = run('"hello hello hello".replaceAll("hello", "hi")');
+Deno.test("String - replaceAll", async () => {
+  const result = await run('"hello hello hello".replaceAll("hello", "hi")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hi hi hi");
@@ -115,48 +115,48 @@ Deno.test("String - replaceAll", () => {
 
 // ========== startsWith / endsWith / includes ==========
 
-Deno.test("String - startsWith true", () => {
-  const result = run('"hello world".startsWith("hello")');
+Deno.test("String - startsWith true", async () => {
+  const result = await run('"hello world".startsWith("hello")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, true);
   }
 });
 
-Deno.test("String - startsWith false", () => {
-  const result = run('"hello world".startsWith("world")');
+Deno.test("String - startsWith false", async () => {
+  const result = await run('"hello world".startsWith("world")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, false);
   }
 });
 
-Deno.test("String - endsWith true", () => {
-  const result = run('"hello world".endsWith("world")');
+Deno.test("String - endsWith true", async () => {
+  const result = await run('"hello world".endsWith("world")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, true);
   }
 });
 
-Deno.test("String - endsWith false", () => {
-  const result = run('"hello world".endsWith("hello")');
+Deno.test("String - endsWith false", async () => {
+  const result = await run('"hello world".endsWith("hello")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, false);
   }
 });
 
-Deno.test("String - includes true", () => {
-  const result = run('"hello world".includes("o w")');
+Deno.test("String - includes true", async () => {
+  const result = await run('"hello world".includes("o w")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, true);
   }
 });
 
-Deno.test("String - includes false", () => {
-  const result = run('"hello world".includes("xyz")');
+Deno.test("String - includes false", async () => {
+  const result = await run('"hello world".includes("xyz")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, false);
@@ -165,24 +165,24 @@ Deno.test("String - includes false", () => {
 
 // ========== indexOf / lastIndexOf ==========
 
-Deno.test("String - indexOf found", () => {
-  const result = run('"hello world".indexOf("world")');
+Deno.test("String - indexOf found", async () => {
+  const result = await run('"hello world".indexOf("world")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, 6);
   }
 });
 
-Deno.test("String - indexOf not found", () => {
-  const result = run('"hello world".indexOf("xyz")');
+Deno.test("String - indexOf not found", async () => {
+  const result = await run('"hello world".indexOf("xyz")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, -1);
   }
 });
 
-Deno.test("String - lastIndexOf", () => {
-  const result = run('"hello hello".lastIndexOf("hello")');
+Deno.test("String - lastIndexOf", async () => {
+  const result = await run('"hello hello".lastIndexOf("hello")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, 6);
@@ -191,24 +191,24 @@ Deno.test("String - lastIndexOf", () => {
 
 // ========== substring ==========
 
-Deno.test("String - substring with start only", () => {
-  const result = run('"hello world".substring(6)');
+Deno.test("String - substring with start only", async () => {
+  const result = await run('"hello world".substring(6)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "world");
   }
 });
 
-Deno.test("String - substring with start and end", () => {
-  const result = run('"hello world".substring(0, 5)');
+Deno.test("String - substring with start and end", async () => {
+  const result = await run('"hello world".substring(0, 5)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello");
   }
 });
 
-Deno.test("String - substring middle", () => {
-  const result = run('"hello world".substring(2, 8)');
+Deno.test("String - substring middle", async () => {
+  const result = await run('"hello world".substring(2, 8)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "llo wo");
@@ -217,24 +217,24 @@ Deno.test("String - substring middle", () => {
 
 // ========== charAt ==========
 
-Deno.test("String - charAt valid index", () => {
-  const result = run('"hello".charAt(0)');
+Deno.test("String - charAt valid index", async () => {
+  const result = await run('"hello".charAt(0)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "h");
   }
 });
 
-Deno.test("String - charAt last character", () => {
-  const result = run('"hello".charAt(4)');
+Deno.test("String - charAt last character", async () => {
+  const result = await run('"hello".charAt(4)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "o");
   }
 });
 
-Deno.test("String - charAt out of bounds", () => {
-  const result = run('"hello".charAt(10)');
+Deno.test("String - charAt out of bounds", async () => {
+  const result = await run('"hello".charAt(10)');
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.includes("out of bounds"), true);
@@ -243,24 +243,24 @@ Deno.test("String - charAt out of bounds", () => {
 
 // ========== repeat ==========
 
-Deno.test("String - repeat", () => {
-  const result = run('"ha".repeat(3)');
+Deno.test("String - repeat", async () => {
+  const result = await run('"ha".repeat(3)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hahaha");
   }
 });
 
-Deno.test("String - repeat zero times", () => {
-  const result = run('"hello".repeat(0)');
+Deno.test("String - repeat zero times", async () => {
+  const result = await run('"hello".repeat(0)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "");
   }
 });
 
-Deno.test("String - repeat negative count", () => {
-  const result = run('"hello".repeat(-1)');
+Deno.test("String - repeat negative count", async () => {
+  const result = await run('"hello".repeat(-1)');
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.includes("non-negative"), true);
@@ -269,32 +269,32 @@ Deno.test("String - repeat negative count", () => {
 
 // ========== padStart / padEnd ==========
 
-Deno.test("String - padStart with default space", () => {
-  const result = run('"5".padStart(3)');
+Deno.test("String - padStart with default space", async () => {
+  const result = await run('"5".padStart(3)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "  5");
   }
 });
 
-Deno.test("String - padStart with custom char", () => {
-  const result = run('"5".padStart(3, "0")');
+Deno.test("String - padStart with custom char", async () => {
+  const result = await run('"5".padStart(3, "0")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "005");
   }
 });
 
-Deno.test("String - padEnd with default space", () => {
-  const result = run('"5".padEnd(3)');
+Deno.test("String - padEnd with default space", async () => {
+  const result = await run('"5".padEnd(3)');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "5  ");
   }
 });
 
-Deno.test("String - padEnd with custom char", () => {
-  const result = run('"5".padEnd(3, "0")');
+Deno.test("String - padEnd with custom char", async () => {
+  const result = await run('"5".padEnd(3, "0")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "500");
@@ -303,16 +303,16 @@ Deno.test("String - padEnd with custom char", () => {
 
 // ========== Combined usage ==========
 
-Deno.test("String - chained methods", () => {
-  const result = run('"  HELLO WORLD  ".trim().toLowerCase()');
+Deno.test("String - chained methods", async () => {
+  const result = await run('"  HELLO WORLD  ".trim().toLowerCase()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello world");
   }
 });
 
-Deno.test("String - split and process", () => {
-  const result = run(`
+Deno.test("String - split and process", async () => {
+  const result = await run(`
     words = "hello,world".split(",")
     words.map((word) => word.toUpperCase())
   `);
@@ -326,32 +326,32 @@ Deno.test("String - split and process", () => {
 
 // ========== Array join() ==========
 
-Deno.test("Array - join with default comma", () => {
-  const result = run('["hello", "world"].join()');
+Deno.test("Array - join with default comma", async () => {
+  const result = await run('["hello", "world"].join()');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello,world");
   }
 });
 
-Deno.test("Array - join with custom separator", () => {
-  const result = run('["hello", "world"].join(" ")');
+Deno.test("Array - join with custom separator", async () => {
+  const result = await run('["hello", "world"].join(" ")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "hello world");
   }
 });
 
-Deno.test("Array - join with dash", () => {
-  const result = run('["2025", "10", "12"].join("-")');
+Deno.test("Array - join with dash", async () => {
+  const result = await run('["2025", "10", "12"].join("-")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "2025-10-12");
   }
 });
 
-Deno.test("Array - join mixed types", () => {
-  const result = run('[1, "hello", true].join(", ")');
+Deno.test("Array - join mixed types", async () => {
+  const result = await run('[1, "hello", true].join(", ")');
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals((result.value as any).value, "1, hello, true");
@@ -360,24 +360,24 @@ Deno.test("Array - join mixed types", () => {
 
 // ========== Error handling ==========
 
-Deno.test("String - replace with non-string search", () => {
-  const result = run('"hello".replace(5, "x")');
+Deno.test("String - replace with non-string search", async () => {
+  const result = await run('"hello".replace(5, "x")');
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.includes("TypeError"), true);
   }
 });
 
-Deno.test("String - split with non-string delimiter", () => {
-  const result = run('"hello".split(5)');
+Deno.test("String - split with non-string delimiter", async () => {
+  const result = await run('"hello".split(5)');
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.includes("TypeError"), true);
   }
 });
 
-Deno.test("String - substring with non-number start", () => {
-  const result = run('"hello".substring("x")');
+Deno.test("String - substring with non-number start", async () => {
+  const result = await run('"hello".substring("x")');
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.includes("TypeError"), true);

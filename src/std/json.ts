@@ -77,7 +77,7 @@ function jsToRuntimeValue(value: any): RuntimeValue {
 export const json_parse: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "parse",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1) {
       return runtimeError("json.parse() expects exactly 1 argument");
     }
@@ -103,7 +103,7 @@ export const json_parse: NativeFunctionValue = {
 export const json_stringify: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "stringify",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1) {
       return runtimeError("json.stringify() expects exactly 1 argument");
     }

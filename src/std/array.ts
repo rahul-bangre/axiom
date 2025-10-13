@@ -9,21 +9,21 @@ import {
 } from "@runtime";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 
-type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => Result<RuntimeValue>;
+type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => Promise<Result<RuntimeValue>>;
 type IsTruthy = (value: RuntimeValue) => boolean;
 
 export function createArrayMethods(
   callFunction: CallFunction,
   isTruthy: IsTruthy,
-): Record<string, (arr: ArrayValue, ...args: RuntimeValue[]) => Result<RuntimeValue>> {
+): Record<string, (arr: ArrayValue, ...args: RuntimeValue[]) => Promise<Result<RuntimeValue>>> {
   return {
-    push: (arr_val, elem_val) => {
+    push: async (arr_val, elem_val) => {
       return ok({
         type: ValueType.ARRAY,
         elements: [...arr_val.elements, elem_val],
       } as ArrayValue);
     },
-    pop: (arr_val) => {
+    pop: async (arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("pop() called on empty array");
       }
@@ -32,19 +32,19 @@ export function createArrayMethods(
         elements: arr_val.elements.slice(0, -1),
       } as ArrayValue);
     },
-    first: (arr_val) => {
+    first: async (arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("first() called on empty array");
       }
       return ok(arr_val.elements[0]);
     },
-    last: (arr_val) => {
+    last: async (arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("last() called on empty array");
       }
       return ok(arr_val.elements[arr_val.elements.length - 1]);
     },
-    slice: (arr_val, start_val, end_val?) => {
+    slice: async (arr_val, start_val, end_val?) => {
       if (start_val.type !== ValueType.NUMBER) {
         return typeError(`slice() start index must be a number, got ${start_val.type}`);
       }
@@ -61,7 +61,7 @@ export function createArrayMethods(
         elements: arr_val.elements.slice(start_idx, end_idx),
       } as ArrayValue);
     },
-    concat: (arr_val, other_val) => {
+    concat: async (arr_val, other_val) => {
       if (other_val.type !== ValueType.ARRAY) {
         return typeError(`concat() requires an array, got ${other_val.type}`);
       }
@@ -70,13 +70,13 @@ export function createArrayMethods(
         elements: [...arr_val.elements, ...(other_val as ArrayValue).elements],
       } as ArrayValue);
     },
-    map: (arr_val, fn_val) => {
+    map: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`map() requires a function, got ${fn_val.type}`);
       }
       const mapped_elements: RuntimeValue[] = [];
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         mapped_elements.push(call_result.value);
       }
@@ -85,13 +85,13 @@ export function createArrayMethods(
         elements: mapped_elements,
       } as ArrayValue);
     },
-    filter: (arr_val, fn_val) => {
+    filter: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`filter() requires a function, got ${fn_val.type}`);
       }
       const filtered_elements: RuntimeValue[] = [];
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (isTruthy(call_result.value)) {
           filtered_elements.push(arr_val.elements[i]);
@@ -102,7 +102,7 @@ export function createArrayMethods(
         elements: filtered_elements,
       } as ArrayValue);
     },
-    reduce: (arr_val, fn_val, initial_val) => {
+    reduce: async (arr_val, fn_val, initial_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`reduce() requires a function, got ${fn_val.type}`);
       }
@@ -111,28 +111,28 @@ export function createArrayMethods(
       }
       let accumulator_val = initial_val;
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [accumulator_val, arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [accumulator_val, arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         accumulator_val = call_result.value;
       }
       return ok(accumulator_val);
     },
-    forEach: (arr_val, fn_val) => {
+    forEach: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`forEach() requires a function, got ${fn_val.type}`);
       }
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
       }
       return ok({ type: ValueType.NULL } as NullValue);
     },
-    find: (arr_val, fn_val) => {
+    find: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`find() requires a function, got ${fn_val.type}`);
       }
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (isTruthy(call_result.value)) {
           return ok(arr_val.elements[i]);
@@ -140,12 +140,12 @@ export function createArrayMethods(
       }
       return ok({ type: ValueType.NULL } as NullValue);
     },
-    findIndex: (arr_val, fn_val) => {
+    findIndex: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`findIndex() requires a function, got ${fn_val.type}`);
       }
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (isTruthy(call_result.value)) {
           return ok({ type: ValueType.NUMBER, value: i } as NumberValue);
@@ -153,12 +153,12 @@ export function createArrayMethods(
       }
       return ok({ type: ValueType.NUMBER, value: -1 } as NumberValue);
     },
-    some: (arr_val, fn_val) => {
+    some: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`some() requires a function, got ${fn_val.type}`);
       }
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (isTruthy(call_result.value)) {
           return ok({ type: ValueType.BOOLEAN, value: true } as BooleanValue);
@@ -166,12 +166,12 @@ export function createArrayMethods(
       }
       return ok({ type: ValueType.BOOLEAN, value: false } as BooleanValue);
     },
-    every: (arr_val, fn_val) => {
+    every: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`every() requires a function, got ${fn_val.type}`);
       }
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (!isTruthy(call_result.value)) {
           return ok({ type: ValueType.BOOLEAN, value: false } as BooleanValue);
@@ -179,13 +179,13 @@ export function createArrayMethods(
       }
       return ok({ type: ValueType.BOOLEAN, value: true } as BooleanValue);
     },
-    flatMap: (arr_val, fn_val) => {
+    flatMap: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`flatMap() requires a function, got ${fn_val.type}`);
       }
       const flattened_elements: RuntimeValue[] = [];
       for (let i = 0; i < arr_val.elements.length; i++) {
-        const call_result = callFunction(fn_val, [arr_val.elements[i]]);
+        const call_result = await callFunction(fn_val, [arr_val.elements[i]]);
         if (!call_result.ok) return call_result;
         if (call_result.value.type === ValueType.ARRAY) {
           flattened_elements.push(...(call_result.value as ArrayValue).elements);
@@ -198,7 +198,7 @@ export function createArrayMethods(
         elements: flattened_elements,
       } as ArrayValue);
     },
-    join: (arr_val, separator_val?) => {
+    join: async (arr_val, separator_val?) => {
       const separator = separator_val && separator_val.type === ValueType.STRING
         ? (separator_val as StringValue).value
         : ",";
@@ -222,13 +222,13 @@ export function createArrayMethods(
         value: string_parts.join(separator),
       } as StringValue);
     },
-    reverse: (arr_val) => {
+    reverse: async (arr_val) => {
       return ok({
         type: ValueType.ARRAY,
         elements: [...arr_val.elements].reverse(),
       } as ArrayValue);
     },
-    sort: (arr_val) => {
+    sort: async (arr_val) => {
       const sorted = [...arr_val.elements].sort((a, b) => {
         if (a.type === ValueType.NUMBER && b.type === ValueType.NUMBER) {
           return (a as NumberValue).value - (b as NumberValue).value;

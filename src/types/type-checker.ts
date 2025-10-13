@@ -88,6 +88,11 @@ export function checkReturnType(
     return ok(undefined);
   }
 
+  if (expected_type.startsWith("async ")) {
+    const inner_type = expected_type.substring(6);
+    return checkType(return_value, inner_type, `return statement of function '${function_name}'`);
+  }
+
   return checkType(return_value, expected_type, `return statement of function '${function_name}'`);
 }
 

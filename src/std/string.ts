@@ -1,13 +1,13 @@
 import { ArrayValue, NumberValue, RuntimeValue, StringValue, ValueType } from "@runtime";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 
-type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => Result<RuntimeValue>;
+type CallFunction = (callee: RuntimeValue, args: RuntimeValue[]) => Promise<Result<RuntimeValue>>;
 
 export function createStringMethods(
   _callFunction: CallFunction,
-): Record<string, (str: StringValue, ...args: RuntimeValue[]) => Result<RuntimeValue>> {
+): Record<string, (str: StringValue, ...args: RuntimeValue[]) => Promise<Result<RuntimeValue>>> {
   return {
-    split: (str_val, delimiter_val?) => {
+    split: async (str_val, delimiter_val?) => {
       const str = str_val.value;
 
       if (!delimiter_val) {
@@ -32,27 +32,27 @@ export function createStringMethods(
       } as ArrayValue);
     },
 
-    trim: (str_val) => {
+    trim: async (str_val) => {
       return ok({ type: ValueType.STRING, value: str_val.value.trim() } as StringValue);
     },
 
-    trimStart: (str_val) => {
+    trimStart: async (str_val) => {
       return ok({ type: ValueType.STRING, value: str_val.value.trimStart() } as StringValue);
     },
 
-    trimEnd: (str_val) => {
+    trimEnd: async (str_val) => {
       return ok({ type: ValueType.STRING, value: str_val.value.trimEnd() } as StringValue);
     },
 
-    toUpperCase: (str_val) => {
+    toUpperCase: async (str_val) => {
       return ok({ type: ValueType.STRING, value: str_val.value.toUpperCase() } as StringValue);
     },
 
-    toLowerCase: (str_val) => {
+    toLowerCase: async (str_val) => {
       return ok({ type: ValueType.STRING, value: str_val.value.toLowerCase() } as StringValue);
     },
 
-    replace: (str_val, search_val, replace_val) => {
+    replace: async (str_val, search_val, replace_val) => {
       if (search_val.type !== ValueType.STRING) {
         return typeError(`replace() search argument must be a string, got ${search_val.type}`);
       }
@@ -70,7 +70,7 @@ export function createStringMethods(
       } as StringValue);
     },
 
-    replaceAll: (str_val, search_val, replace_val) => {
+    replaceAll: async (str_val, search_val, replace_val) => {
       if (search_val.type !== ValueType.STRING) {
         return typeError(`replaceAll() search argument must be a string, got ${search_val.type}`);
       }
@@ -88,7 +88,7 @@ export function createStringMethods(
       } as StringValue);
     },
 
-    startsWith: (str_val, prefix_val) => {
+    startsWith: async (str_val, prefix_val) => {
       if (prefix_val.type !== ValueType.STRING) {
         return typeError(`startsWith() argument must be a string, got ${prefix_val.type}`);
       }
@@ -102,7 +102,7 @@ export function createStringMethods(
       });
     },
 
-    endsWith: (str_val, suffix_val) => {
+    endsWith: async (str_val, suffix_val) => {
       if (suffix_val.type !== ValueType.STRING) {
         return typeError(`endsWith() argument must be a string, got ${suffix_val.type}`);
       }
@@ -116,7 +116,7 @@ export function createStringMethods(
       });
     },
 
-    includes: (str_val, search_val) => {
+    includes: async (str_val, search_val) => {
       if (search_val.type !== ValueType.STRING) {
         return typeError(`includes() argument must be a string, got ${search_val.type}`);
       }
@@ -130,7 +130,7 @@ export function createStringMethods(
       });
     },
 
-    indexOf: (str_val, search_val) => {
+    indexOf: async (str_val, search_val) => {
       if (search_val.type !== ValueType.STRING) {
         return typeError(`indexOf() argument must be a string, got ${search_val.type}`);
       }
@@ -144,7 +144,7 @@ export function createStringMethods(
       } as NumberValue);
     },
 
-    lastIndexOf: (str_val, search_val) => {
+    lastIndexOf: async (str_val, search_val) => {
       if (search_val.type !== ValueType.STRING) {
         return typeError(`lastIndexOf() argument must be a string, got ${search_val.type}`);
       }
@@ -158,7 +158,7 @@ export function createStringMethods(
       } as NumberValue);
     },
 
-    substring: (str_val, start_val, end_val?) => {
+    substring: async (str_val, start_val, end_val?) => {
       if (start_val.type !== ValueType.NUMBER) {
         return typeError(`substring() start must be a number, got ${start_val.type}`);
       }
@@ -179,7 +179,7 @@ export function createStringMethods(
       return ok({ type: ValueType.STRING, value: str.substring(start, end) } as StringValue);
     },
 
-    charAt: (str_val, index_val) => {
+    charAt: async (str_val, index_val) => {
       if (index_val.type !== ValueType.NUMBER) {
         return typeError(`charAt() index must be a number, got ${index_val.type}`);
       }
@@ -194,7 +194,7 @@ export function createStringMethods(
       return ok({ type: ValueType.STRING, value: str.charAt(index) } as StringValue);
     },
 
-    repeat: (str_val, count_val) => {
+    repeat: async (str_val, count_val) => {
       if (count_val.type !== ValueType.NUMBER) {
         return typeError(`repeat() count must be a number, got ${count_val.type}`);
       }
@@ -211,7 +211,7 @@ export function createStringMethods(
       } as StringValue);
     },
 
-    padStart: (str_val, length_val, pad_val?) => {
+    padStart: async (str_val, length_val, pad_val?) => {
       if (length_val.type !== ValueType.NUMBER) {
         return typeError(`padStart() length must be a number, got ${length_val.type}`);
       }
@@ -227,7 +227,7 @@ export function createStringMethods(
       } as StringValue);
     },
 
-    padEnd: (str_val, length_val, pad_val?) => {
+    padEnd: async (str_val, length_val, pad_val?) => {
       if (length_val.type !== ValueType.NUMBER) {
         return typeError(`padEnd() length must be a number, got ${length_val.type}`);
       }

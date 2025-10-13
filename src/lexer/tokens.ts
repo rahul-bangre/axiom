@@ -11,6 +11,7 @@ export enum TokenType {
   NULL,
   TYPE,
   TYPEOF,
+  AWAIT,
 
   PLUS,
   MINUS,
@@ -62,4 +63,5 @@ export const KEYWORDS: Record<string, TokenType> = {
   null: TokenType.NULL,
   type: TokenType.TYPE,
   typeof: TokenType.TYPEOF,
+  await: TokenType.AWAIT,
 };

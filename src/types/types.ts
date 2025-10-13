@@ -8,16 +8,24 @@ export enum AxiomType {
   OBJECT,
   FUNCTION,
   ANY,
+  ASYNC,
 }
 
 export interface TypeInfo {
   type: AxiomType;
   element_type?: AxiomType;
   property_types?: Map<string, AxiomType>;
+  inner_type?: AxiomType;
 }
 
 export function parseType(type_string: string): AxiomType {
-  switch (type_string.toLowerCase()) {
+  const trimmed = type_string.trim();
+
+  if (trimmed.startsWith("async")) {
+    return AxiomType.ASYNC;
+  }
+
+  switch (trimmed.toLowerCase()) {
     case "int":
       return AxiomType.INT;
     case "float":
@@ -60,5 +68,7 @@ export function typeToString(type: AxiomType): string {
       return "function";
     case AxiomType.ANY:
       return "any";
+    case AxiomType.ASYNC:
+      return "async";
   }
 }

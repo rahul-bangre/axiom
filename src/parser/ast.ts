@@ -16,6 +16,7 @@ export enum ASTNodeType {
   MEMBER_EXPR,
   LAMBDA_EXPR,
   TERNARY_EXPR,
+  AWAIT_EXPR,
 
   CONST_DECLARATION,
   FUNC_DECLARATION,
@@ -111,6 +112,11 @@ export interface MemberExpr extends ASTNode {
   computed: boolean;
 }
 
+export interface AwaitExpr extends ASTNode {
+  type: ASTNodeType.AWAIT_EXPR;
+  argument: Expression;
+}
+
 export interface ConstDeclaration extends ASTNode {
   type: ASTNodeType.CONST_DECLARATION;
   identifier: string;
@@ -163,7 +169,8 @@ export type Expression =
   | BinaryExpr
   | UnaryExpr
   | CallExpr
-  | MemberExpr;
+  | MemberExpr
+  | AwaitExpr;
 
 export type Statement =
   | ConstDeclaration

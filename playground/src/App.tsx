@@ -16,9 +16,9 @@ function App() {
     setIsRunning(true);
 
     // Use setTimeout to allow UI to update
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        const executionResult = runAxiomCode(code);
+        const executionResult = await runAxiomCode(code);
         setResult(executionResult);
       } catch (error) {
         setResult({

@@ -11,6 +11,7 @@ export enum ValueType {
   OBJECT,
   FUNCTION,
   NATIVE_FUNCTION,
+  ASYNC,
 }
 
 export interface RuntimeValue {
@@ -59,5 +60,14 @@ export interface FunctionValue extends RuntimeValue {
 export interface NativeFunctionValue extends RuntimeValue {
   type: ValueType.NATIVE_FUNCTION;
   name: string;
-  call: (args: RuntimeValue[]) => Result<RuntimeValue>;
+  call: (args: RuntimeValue[]) => Promise<Result<RuntimeValue>>;
+}
+
+export interface AsyncValue extends RuntimeValue {
+  type: ValueType.ASYNC;
+  promise: Promise<RuntimeValue>;
+}
+
+export function makeAsyncValue(promise: Promise<RuntimeValue>): AsyncValue {
+  return { type: ValueType.ASYNC, promise };
 }

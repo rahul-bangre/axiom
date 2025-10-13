@@ -1,0 +1,99 @@
+// Async/Await Demo
+// 
+// Functions can declare async return types with : async T
+// The await keyword resolves AsyncValue<T> to T
+
+// ==================== Basic Async ====================
+
+fn get_number(): async int {
+  return 42
+}
+
+// Function returns AsyncValue<int>
+async_val = get_number()
+print("Type of async value:", typeof async_val)
+
+// Await resolves it to int
+result = await async_val
+print("After await:", result)
+print("Type after await:", typeof result)
+
+// ==================== Async Composition ====================
+
+fn fetch_user(id: int): async string {
+  return "User_" + id
+}
+
+fn fetch_score(user: string): async int {
+  return 100
+}
+
+fn get_user_info(id: int): async object {
+  username = await fetch_user(id)
+  user_score = await fetch_score(username)
+  
+  return {
+    id: id,
+    name: username,
+    score: user_score
+  }
+}
+
+info = await get_user_info(5)
+print("\nUser info:")
+print("  Name:", info.name)
+print("  Score:", info.score)
+
+// ==================== Async with Operations ====================
+
+fn get_x(): async int {
+  return 10
+}
+
+fn get_y(): async int {
+  return 5
+}
+
+x = await get_x()
+y = await get_y()
+sum = x + y
+print("\nSum:", sum)
+
+// ==================== Multiple Async Calls ====================
+
+fn fetch_multiple(): async array {
+  user1 = await fetch_user(1)
+  user2 = await fetch_user(2)
+  user3 = await fetch_user(3)
+  
+  return [user1, user2, user3]
+}
+
+users = await fetch_multiple()
+print("\nFetched users:", users)
+
+// ==================== Conditionals ====================
+
+fn maybe_fetch(should_fetch: bool): async string {
+  if (should_fetch) {
+    return await fetch_user(99)
+  }
+  return "guest"
+}
+
+cached = await maybe_fetch(false)
+fresh = await maybe_fetch(true)
+print("\nCached:", cached)
+print("Fresh:", fresh)
+
+// ==================== Ternary with Await ====================
+
+fn get_message(priority: bool): async string {
+  user = priority ? await fetch_user(1) : "guest"
+  return "Hello " + user
+}
+
+message = await get_message(true)
+print("\n" + message)
+
+print("\n✓ Async/await demonstration complete!")

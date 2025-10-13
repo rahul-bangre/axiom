@@ -12,7 +12,7 @@ export interface ExecutionResult {
   executionTime: number;
 }
 
-export function runAxiomCode(code: string): ExecutionResult {
+export async function runAxiomCode(code: string): Promise<ExecutionResult> {
   const startTime = performance.now();
   const logs: string[] = [];
 
@@ -39,7 +39,7 @@ export function runAxiomCode(code: string): ExecutionResult {
 
     // Evaluate
     const globalEnv = createGlobalEnv();
-    const result = evaluate(ast, globalEnv);
+    const result = await evaluate(ast, globalEnv);
 
     // Restore console
     console.log = originalLog;

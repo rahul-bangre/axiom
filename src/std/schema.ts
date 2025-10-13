@@ -24,7 +24,7 @@ class SchemaBuilder {
     return this;
   }
 
-  validate(value: RuntimeValue): Result<RuntimeValue> {
+  async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     for (const rule of this.rules) {
       const result = rule.validate(value);
       if (!result.ok) {
@@ -119,7 +119,7 @@ class ObjectSchema extends SchemaBuilder {
     this.shape = shape;
   }
 
-  override validate(value: RuntimeValue): Result<RuntimeValue> {
+  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     if (value.type !== ValueType.OBJECT) {
       return typeError("Expected object");
     }
@@ -135,13 +135,13 @@ class ObjectSchema extends SchemaBuilder {
         return runtimeError(`Missing required property: ${key}`);
       }
 
-      const result = schema.validate(prop);
+      const result = await schema.validate(prop);
       if (!result.ok) {
         return runtimeError(`Invalid property '${key}': ${result.error}`);
       }
     }
 
-    return super.validate(value);
+    return await super.validate(value);
   }
 
   extend(additional_shape: Map<string, SchemaBuilder>): ObjectSchema {
@@ -161,7 +161,7 @@ class ArraySchema extends SchemaBuilder {
     this.item_schema = item_schema;
   }
 
-  override validate(value: RuntimeValue): Result<RuntimeValue> {
+  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     if (value.type !== ValueType.ARRAY) {
       return typeError("Expected array");
     }
@@ -169,13 +169,13 @@ class ArraySchema extends SchemaBuilder {
     const arr_value = value as ArrayValue;
 
     for (let i = 0; i < arr_value.elements.length; i++) {
-      const result = this.item_schema.validate(arr_value.elements[i]);
+      const result = await this.item_schema.validate(arr_value.elements[i]);
       if (!result.ok) {
         return runtimeError(`Invalid array element at index ${i}: ${result.error}`);
       }
     }
 
-    return super.validate(value);
+    return await super.validate(value);
   }
 
   min(length: number): this {
@@ -217,11 +217,11 @@ class OptionalSchema extends SchemaBuilder {
     this.inner_schema = inner_schema;
   }
 
-  override validate(value: RuntimeValue): Result<RuntimeValue> {
+  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     if (value.type === ValueType.NULL) {
       return ok(value);
     }
-    return this.inner_schema.validate(value);
+    return await this.inner_schema.validate(value);
   }
 }
 
@@ -234,7 +234,7 @@ class LazySchema extends SchemaBuilder {
     this.schema_fn = schema_fn;
   }
 
-  override validate(value: RuntimeValue): Result<RuntimeValue> {
+  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     if (!this.cached_schema) {
       if (
         this.schema_fn.type !== ValueType.FUNCTION &&
@@ -245,11 +245,11 @@ class LazySchema extends SchemaBuilder {
 
       let result: Result<RuntimeValue>;
       if (this.schema_fn.type === ValueType.NATIVE_FUNCTION) {
-        result = (this.schema_fn as NativeFunctionValue).call([]);
+        result = await (this.schema_fn as NativeFunctionValue).call([]);
       } else {
         const fn = this.schema_fn as FunctionValue;
         const fn_env = new Environment(fn.closure);
-        result = evaluate(fn.body, fn_env);
+        result = await evaluate(fn.body, fn_env);
       }
 
       if (!result.ok) {
@@ -280,7 +280,7 @@ class LazySchema extends SchemaBuilder {
 }
 
 class AnySchema extends SchemaBuilder {
-  override validate(value: RuntimeValue): Result<RuntimeValue> {
+  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     return ok(value);
   }
 }
@@ -288,7 +288,7 @@ class AnySchema extends SchemaBuilder {
 const schema_string: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "string",
-  call: (_args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (_args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     const builder = new StringSchema();
     const builder_obj: ObjectValue = {
       type: ValueType.OBJECT,
@@ -299,14 +299,14 @@ const schema_string: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_number: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "number",
-  call: (_args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (_args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     const builder = new NumberSchema();
     const builder_obj: ObjectValue = {
       type: ValueType.OBJECT,
@@ -317,14 +317,14 @@ const schema_number: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_boolean: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "boolean",
-  call: (_args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (_args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     const builder = new SchemaBuilder();
     builder.addRule({
       validate: (value: RuntimeValue) => {
@@ -341,16 +341,16 @@ const schema_boolean: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_object: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "object",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1 || args[0].type !== ValueType.OBJECT) {
-      return runtimeError("schema.object() requires an object argument");
+      return Promise.resolve(runtimeError("schema.object() requires an object argument"));
     }
 
     const shape_obj = args[0] as ObjectValue;
@@ -358,7 +358,7 @@ const schema_object: NativeFunctionValue = {
 
     for (const [key, val] of shape_obj.properties.entries()) {
       if (val.type !== ValueType.OBJECT) {
-        return runtimeError(`Invalid schema for property '${key}'`);
+        return Promise.resolve(runtimeError(`Invalid schema for property '${key}'`));
       }
       const schema_obj = val as ObjectValue;
       const builder = (schema_obj as unknown as Record<string, unknown>)._builder as SchemaBuilder;
@@ -376,27 +376,27 @@ const schema_object: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_array: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "array",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1) {
-      return runtimeError("schema.array() requires exactly 1 argument");
+      return Promise.resolve(runtimeError("schema.array() requires exactly 1 argument"));
     }
 
     const item_schema_obj = args[0];
     if (item_schema_obj.type !== ValueType.OBJECT) {
-      return runtimeError("schema.array() requires a schema argument");
+      return Promise.resolve(runtimeError("schema.array() requires a schema argument"));
     }
 
     const builder = (item_schema_obj as unknown as Record<string, unknown>)
       ._builder as SchemaBuilder;
     if (!builder) {
-      return runtimeError("Invalid schema passed to schema.array()");
+      return Promise.resolve(runtimeError("Invalid schema passed to schema.array()"));
     }
 
     const array_builder = new ArraySchema(builder);
@@ -409,27 +409,27 @@ const schema_array: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = array_builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_optional: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "optional",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1) {
-      return runtimeError("schema.optional() requires exactly 1 argument");
+      return Promise.resolve(runtimeError("schema.optional() requires exactly 1 argument"));
     }
 
     const inner_schema_obj = args[0];
     if (inner_schema_obj.type !== ValueType.OBJECT) {
-      return runtimeError("schema.optional() requires a schema argument");
+      return Promise.resolve(runtimeError("schema.optional() requires a schema argument"));
     }
 
     const inner_builder = (inner_schema_obj as unknown as Record<string, unknown>)
       ._builder as SchemaBuilder;
     if (!inner_builder) {
-      return runtimeError("Invalid schema passed to schema.optional()");
+      return Promise.resolve(runtimeError("Invalid schema passed to schema.optional()"));
     }
 
     const optional_builder = new OptionalSchema(inner_builder);
@@ -440,21 +440,21 @@ const schema_optional: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = optional_builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_lazy: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "lazy",
-  call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1) {
-      return runtimeError("schema.lazy() requires exactly 1 argument");
+      return Promise.resolve(runtimeError("schema.lazy() requires exactly 1 argument"));
     }
 
     const fn = args[0];
     if (fn.type !== ValueType.FUNCTION && fn.type !== ValueType.NATIVE_FUNCTION) {
-      return runtimeError("schema.lazy() requires a function argument");
+      return Promise.resolve(runtimeError("schema.lazy() requires a function argument"));
     }
 
     const lazy_builder = new LazySchema(fn);
@@ -465,14 +465,14 @@ const schema_lazy: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = lazy_builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
 const schema_any: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "any",
-  call: (_args: RuntimeValue[]): Result<RuntimeValue> => {
+  call: (_args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     const builder = new AnySchema();
     const builder_obj: ObjectValue = {
       type: ValueType.OBJECT,
@@ -481,7 +481,7 @@ const schema_any: NativeFunctionValue = {
       ]),
     };
     (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-    return ok(builder_obj);
+    return Promise.resolve(ok(builder_obj));
   },
 };
 
@@ -489,11 +489,11 @@ function createParseFunction(builder: SchemaBuilder): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "parse",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1) {
         return runtimeError("parse() requires exactly 1 argument");
       }
-      const result = builder.validate(args[0]);
+      const result = await builder.validate(args[0]);
       if (!result.ok) {
         return result;
       }
@@ -506,9 +506,9 @@ function createStringMinFunction(builder: StringSchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "min",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("min() requires a number argument");
+        return Promise.resolve(runtimeError("min() requires a number argument"));
       }
       const length = (args[0] as NumberValue).value;
       builder.min(length);
@@ -521,7 +521,7 @@ function createStringMinFunction(builder: StringSchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -530,9 +530,9 @@ function createStringMaxFunction(builder: StringSchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "max",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("max() requires a number argument");
+        return Promise.resolve(runtimeError("max() requires a number argument"));
       }
       const length = (args[0] as NumberValue).value;
       builder.max(length);
@@ -545,7 +545,7 @@ function createStringMaxFunction(builder: StringSchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -554,9 +554,9 @@ function createNumberMinFunction(builder: NumberSchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "min",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("min() requires a number argument");
+        return Promise.resolve(runtimeError("min() requires a number argument"));
       }
       const min_value = (args[0] as NumberValue).value;
       builder.min(min_value);
@@ -569,7 +569,7 @@ function createNumberMinFunction(builder: NumberSchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -578,9 +578,9 @@ function createNumberMaxFunction(builder: NumberSchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "max",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("max() requires a number argument");
+        return Promise.resolve(runtimeError("max() requires a number argument"));
       }
       const max_value = (args[0] as NumberValue).value;
       builder.max(max_value);
@@ -593,7 +593,7 @@ function createNumberMaxFunction(builder: NumberSchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -602,9 +602,9 @@ function createArrayMinFunction(builder: ArraySchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "min",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("min() requires a number argument");
+        return Promise.resolve(runtimeError("min() requires a number argument"));
       }
       const length = (args[0] as NumberValue).value;
       builder.min(length);
@@ -617,7 +617,7 @@ function createArrayMinFunction(builder: ArraySchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -626,9 +626,9 @@ function createArrayMaxFunction(builder: ArraySchema): NativeFunctionValue {
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "max",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.NUMBER) {
-        return runtimeError("max() requires a number argument");
+        return Promise.resolve(runtimeError("max() requires a number argument"));
       }
       const length = (args[0] as NumberValue).value;
       builder.max(length);
@@ -641,7 +641,7 @@ function createArrayMaxFunction(builder: ArraySchema): NativeFunctionValue {
         ]),
       };
       (builder_obj as unknown as Record<string, unknown>)._builder = builder;
-      return ok(builder_obj);
+      return Promise.resolve(ok(builder_obj));
     },
   };
 }
@@ -650,9 +650,9 @@ function createObjectExtendFunction(builder: ObjectSchema): NativeFunctionValue 
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "extend",
-    call: (args: RuntimeValue[]): Result<RuntimeValue> => {
+    call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.OBJECT) {
-        return runtimeError("extend() requires an object argument");
+        return Promise.resolve(runtimeError("extend() requires an object argument"));
       }
 
       const extension_obj = args[0] as ObjectValue;
@@ -660,7 +660,7 @@ function createObjectExtendFunction(builder: ObjectSchema): NativeFunctionValue 
 
       for (const [key, val] of extension_obj.properties.entries()) {
         if (val.type !== ValueType.OBJECT) {
-          return runtimeError(`Invalid schema for property '${key}'`);
+          return Promise.resolve(runtimeError(`Invalid schema for property '${key}'`));
         }
         const schema_obj = val as ObjectValue;
         const schema_builder = (schema_obj as unknown as Record<string, unknown>)
@@ -679,7 +679,7 @@ function createObjectExtendFunction(builder: ObjectSchema): NativeFunctionValue 
         ]),
       };
       (extended_obj as unknown as Record<string, unknown>)._builder = extended_builder;
-      return ok(extended_obj);
+      return Promise.resolve(ok(extended_obj));
     },
   };
 }

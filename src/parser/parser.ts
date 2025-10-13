@@ -103,7 +103,13 @@ export class Parser {
 
     let return_type: string | undefined;
     if (this.match(TokenType.COLON)) {
-      return_type = this.consume(TokenType.IDENTIFIER, "Expected return type").value;
+      const first_token = this.consume(TokenType.IDENTIFIER, "Expected return type");
+      if (first_token.value === "async" && this.check(TokenType.IDENTIFIER)) {
+        const inner_type = this.advance().value;
+        return_type = `async ${inner_type}`;
+      } else {
+        return_type = first_token.value;
+      }
     }
 
     this.consume(TokenType.LBRACE, "Expected '{' before function body");
@@ -390,6 +396,14 @@ export class Parser {
   }
 
   private unary(): AST.Expression {
+    if (this.match(TokenType.AWAIT)) {
+      const argument = this.unary();
+      return {
+        type: AST.ASTNodeType.AWAIT_EXPR,
+        argument,
+      };
+    }
+
     if (this.match(TokenType.NOT, TokenType.MINUS, TokenType.TYPEOF)) {
       const operator = this.previous().value;
       const operand = this.unary();

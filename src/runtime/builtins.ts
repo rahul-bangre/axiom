@@ -37,7 +37,7 @@ function printValue(value: RuntimeValue): string {
 const print: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "print",
-  call: (args: RuntimeValue[]) => {
+  call: async (args: RuntimeValue[]) => {
     const output_str = args.map(printValue).join(" ");
     console.log(output_str);
     return ok({ type: ValueType.NULL });
@@ -47,7 +47,7 @@ const print: NativeFunctionValue = {
 const len: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "len",
-  call: (args: RuntimeValue[]) => {
+  call: async (args: RuntimeValue[]) => {
     if (args.length !== 1) {
       return runtimeError("len() expects exactly 1 argument");
     }

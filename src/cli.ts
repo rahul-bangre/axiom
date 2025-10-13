@@ -43,7 +43,7 @@ async function runFile(file_path: string): Promise<void> {
     const ast_node = parser.parse();
 
     const global_env = createGlobalEnv();
-    const eval_result = evaluate(ast_node, global_env);
+    const eval_result = await evaluate(ast_node, global_env);
 
     if (!eval_result.ok) {
       console.error(`Error: ${eval_result.error}`);

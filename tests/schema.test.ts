@@ -4,17 +4,17 @@ import { Parser } from "@parser";
 import { createGlobalEnv, evaluate, RuntimeValue } from "@runtime";
 import { Result } from "../src/types/result.ts";
 
-function run(source_code: string): Result<RuntimeValue> {
+async function run(source_code: string): Promise<Result<RuntimeValue>> {
   const tokenizer = new Tokenizer(source_code);
   const tokens = tokenizer.tokenize();
   const parser = new Parser(tokens);
   const ast_node = parser.parse();
   const global_env = createGlobalEnv();
-  return evaluate(ast_node, global_env);
+  return await evaluate(ast_node, global_env);
 }
 
-Deno.test("Schema - string validation passes", () => {
-  const result = run(`
+Deno.test("Schema - string validation passes", async () => {
+  const result = await run(`
     s = schema.string()
     s.parse("hello")
   `);
@@ -22,8 +22,8 @@ Deno.test("Schema - string validation passes", () => {
   if (result.ok) assertEquals((result.value as any).value, "hello");
 });
 
-Deno.test("Schema - string validation fails on number", () => {
-  const result = run(`
+Deno.test("Schema - string validation fails on number", async () => {
+  const result = await run(`
     s = schema.string()
     s.parse(42)
   `);
@@ -31,16 +31,16 @@ Deno.test("Schema - string validation fails on number", () => {
   if (!result.ok) assertEquals(result.error.includes("Expected string"), true);
 });
 
-Deno.test("Schema - string min length validation", () => {
-  const result = run(`
+Deno.test("Schema - string min length validation", async () => {
+  const result = await run(`
     s = schema.string().min(5)
     s.parse("hello")
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - string min length fails", () => {
-  const result = run(`
+Deno.test("Schema - string min length fails", async () => {
+  const result = await run(`
     s = schema.string().min(10)
     s.parse("hello")
   `);
@@ -48,16 +48,16 @@ Deno.test("Schema - string min length fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at least 10"), true);
 });
 
-Deno.test("Schema - string max length validation", () => {
-  const result = run(`
+Deno.test("Schema - string max length validation", async () => {
+  const result = await run(`
     s = schema.string().max(10)
     s.parse("hello")
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - string max length fails", () => {
-  const result = run(`
+Deno.test("Schema - string max length fails", async () => {
+  const result = await run(`
     s = schema.string().max(3)
     s.parse("hello")
   `);
@@ -65,8 +65,8 @@ Deno.test("Schema - string max length fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at most 3"), true);
 });
 
-Deno.test("Schema - number validation passes", () => {
-  const result = run(`
+Deno.test("Schema - number validation passes", async () => {
+  const result = await run(`
     s = schema.number()
     s.parse(42)
   `);
@@ -74,8 +74,8 @@ Deno.test("Schema - number validation passes", () => {
   if (result.ok) assertEquals((result.value as any).value, 42);
 });
 
-Deno.test("Schema - number validation fails on string", () => {
-  const result = run(`
+Deno.test("Schema - number validation fails on string", async () => {
+  const result = await run(`
     s = schema.number()
     s.parse("42")
   `);
@@ -83,16 +83,16 @@ Deno.test("Schema - number validation fails on string", () => {
   if (!result.ok) assertEquals(result.error.includes("Expected number"), true);
 });
 
-Deno.test("Schema - number min validation", () => {
-  const result = run(`
+Deno.test("Schema - number min validation", async () => {
+  const result = await run(`
     s = schema.number().min(0)
     s.parse(42)
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - number min fails", () => {
-  const result = run(`
+Deno.test("Schema - number min fails", async () => {
+  const result = await run(`
     s = schema.number().min(50)
     s.parse(42)
   `);
@@ -100,16 +100,16 @@ Deno.test("Schema - number min fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at least 50"), true);
 });
 
-Deno.test("Schema - number max validation", () => {
-  const result = run(`
+Deno.test("Schema - number max validation", async () => {
+  const result = await run(`
     s = schema.number().max(100)
     s.parse(42)
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - number max fails", () => {
-  const result = run(`
+Deno.test("Schema - number max fails", async () => {
+  const result = await run(`
     s = schema.number().max(10)
     s.parse(42)
   `);
@@ -117,8 +117,8 @@ Deno.test("Schema - number max fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at most 10"), true);
 });
 
-Deno.test("Schema - boolean validation passes", () => {
-  const result = run(`
+Deno.test("Schema - boolean validation passes", async () => {
+  const result = await run(`
     s = schema.boolean()
     s.parse(true)
   `);
@@ -126,8 +126,8 @@ Deno.test("Schema - boolean validation passes", () => {
   if (result.ok) assertEquals((result.value as any).value, true);
 });
 
-Deno.test("Schema - boolean validation fails", () => {
-  const result = run(`
+Deno.test("Schema - boolean validation fails", async () => {
+  const result = await run(`
     s = schema.boolean()
     s.parse(1)
   `);
@@ -135,8 +135,8 @@ Deno.test("Schema - boolean validation fails", () => {
   if (!result.ok) assertEquals(result.error.includes("Expected boolean"), true);
 });
 
-Deno.test("Schema - object validation passes", () => {
-  const result = run(`
+Deno.test("Schema - object validation passes", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       age: schema.number()
@@ -146,8 +146,8 @@ Deno.test("Schema - object validation passes", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - object missing required field", () => {
-  const result = run(`
+Deno.test("Schema - object missing required field", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       age: schema.number()
@@ -161,8 +161,8 @@ Deno.test("Schema - object missing required field", () => {
   }
 });
 
-Deno.test("Schema - object wrong field type", () => {
-  const result = run(`
+Deno.test("Schema - object wrong field type", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       age: schema.number()
@@ -176,8 +176,8 @@ Deno.test("Schema - object wrong field type", () => {
   }
 });
 
-Deno.test("Schema - array validation passes", () => {
-  const result = run(`
+Deno.test("Schema - array validation passes", async () => {
+  const result = await run(`
     s = schema.array(schema.number())
     s.parse([1, 2, 3])
   `);
@@ -185,8 +185,8 @@ Deno.test("Schema - array validation passes", () => {
   if (result.ok) assertEquals((result.value as any).elements.length, 3);
 });
 
-Deno.test("Schema - array element validation fails", () => {
-  const result = run(`
+Deno.test("Schema - array element validation fails", async () => {
+  const result = await run(`
     s = schema.array(schema.number())
     s.parse([1, "two", 3])
   `);
@@ -197,16 +197,16 @@ Deno.test("Schema - array element validation fails", () => {
   }
 });
 
-Deno.test("Schema - array min length", () => {
-  const result = run(`
+Deno.test("Schema - array min length", async () => {
+  const result = await run(`
     s = schema.array(schema.number()).min(2)
     s.parse([1, 2, 3])
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - array min length fails", () => {
-  const result = run(`
+Deno.test("Schema - array min length fails", async () => {
+  const result = await run(`
     s = schema.array(schema.number()).min(5)
     s.parse([1, 2, 3])
   `);
@@ -214,16 +214,16 @@ Deno.test("Schema - array min length fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at least 5"), true);
 });
 
-Deno.test("Schema - array max length", () => {
-  const result = run(`
+Deno.test("Schema - array max length", async () => {
+  const result = await run(`
     s = schema.array(schema.number()).max(5)
     s.parse([1, 2, 3])
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - array max length fails", () => {
-  const result = run(`
+Deno.test("Schema - array max length fails", async () => {
+  const result = await run(`
     s = schema.array(schema.number()).max(2)
     s.parse([1, 2, 3])
   `);
@@ -231,8 +231,8 @@ Deno.test("Schema - array max length fails", () => {
   if (!result.ok) assertEquals(result.error.includes("at most 2"), true);
 });
 
-Deno.test("Schema - optional field present", () => {
-  const result = run(`
+Deno.test("Schema - optional field present", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       email: schema.optional(schema.string())
@@ -242,8 +242,8 @@ Deno.test("Schema - optional field present", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - optional field missing", () => {
-  const result = run(`
+Deno.test("Schema - optional field missing", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       email: schema.optional(schema.string())
@@ -253,8 +253,8 @@ Deno.test("Schema - optional field missing", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - optional field wrong type", () => {
-  const result = run(`
+Deno.test("Schema - optional field wrong type", async () => {
+  const result = await run(`
     s = schema.object({
       name: schema.string(),
       email: schema.optional(schema.string())
@@ -265,8 +265,8 @@ Deno.test("Schema - optional field wrong type", () => {
   if (!result.ok) assertEquals(result.error.includes("Expected string"), true);
 });
 
-Deno.test("Schema - lazy for self-referencing schema", () => {
-  const result = run(`
+Deno.test("Schema - lazy for self-referencing schema", async () => {
+  const result = await run(`
     NodeSchema = schema.object({
       value: schema.number(),
       children: schema.array(schema.lazy(() => NodeSchema))
@@ -285,8 +285,8 @@ Deno.test("Schema - lazy for self-referencing schema", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - lazy deep nesting", () => {
-  const result = run(`
+Deno.test("Schema - lazy deep nesting", async () => {
+  const result = await run(`
     NodeSchema = schema.object({
       value: schema.number(),
       child: schema.optional(schema.lazy(() => NodeSchema))
@@ -308,8 +308,8 @@ Deno.test("Schema - lazy deep nesting", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - lazy validation fails in nested structure", () => {
-  const result = run(`
+Deno.test("Schema - lazy validation fails in nested structure", async () => {
+  const result = await run(`
     NodeSchema = schema.object({
       value: schema.number(),
       children: schema.array(schema.lazy(() => NodeSchema))
@@ -331,16 +331,16 @@ Deno.test("Schema - lazy validation fails in nested structure", () => {
   }
 });
 
-Deno.test("Schema - lazy requires function", () => {
-  const result = run(`
+Deno.test("Schema - lazy requires function", async () => {
+  const result = await run(`
     s = schema.lazy(42)
   `);
   assertEquals(result.ok, false);
   if (!result.ok) assertEquals(result.error.includes("requires a function"), true);
 });
 
-Deno.test("Schema - lazy function must return schema", () => {
-  const result = run(`
+Deno.test("Schema - lazy function must return schema", async () => {
+  const result = await run(`
     s = schema.lazy(() => 42)
     s.parse({})
   `);
@@ -348,19 +348,19 @@ Deno.test("Schema - lazy function must return schema", () => {
   if (!result.ok) assertEquals(result.error.includes("must return a schema"), true);
 });
 
-Deno.test("Schema - any accepts any value", () => {
-  const result1 = run(`schema.any().parse(42)`);
+Deno.test("Schema - any accepts any value", async () => {
+  const result1 = await run(`schema.any().parse(42)`);
   assertEquals(result1.ok, true);
 
-  const result2 = run(`schema.any().parse("hello")`);
+  const result2 = await run(`schema.any().parse("hello")`);
   assertEquals(result2.ok, true);
 
-  const result3 = run(`schema.any().parse({name: "test"})`);
+  const result3 = await run(`schema.any().parse({name: "test"})`);
   assertEquals(result3.ok, true);
 });
 
-Deno.test("Schema - nested objects with optional", () => {
-  const result = run(`
+Deno.test("Schema - nested objects with optional", async () => {
+  const result = await run(`
     UserSchema = schema.object({
       name: schema.string(),
       age: schema.number()
@@ -379,8 +379,8 @@ Deno.test("Schema - nested objects with optional", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - array of objects", () => {
-  const result = run(`
+Deno.test("Schema - array of objects", async () => {
+  const result = await run(`
     UserSchema = schema.object({
       name: schema.string(),
       age: schema.number()
@@ -400,16 +400,16 @@ Deno.test("Schema - array of objects", () => {
   if (result.ok) assertEquals((result.value as any).value, 2);
 });
 
-Deno.test("Schema - method chaining", () => {
-  const result = run(`
+Deno.test("Schema - method chaining", async () => {
+  const result = await run(`
     s = schema.string().min(5).max(20)
     s.parse("hello world")
   `);
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - method chaining validation fails", () => {
-  const result = run(`
+Deno.test("Schema - method chaining validation fails", async () => {
+  const result = await run(`
     s = schema.number().min(10).max(20)
     s.parse(5)
   `);
@@ -419,8 +419,8 @@ Deno.test("Schema - method chaining validation fails", () => {
 
 // ========== extend() tests ==========
 
-Deno.test("Schema - extend basic object", () => {
-  const result = run(`
+Deno.test("Schema - extend basic object", async () => {
+  const result = await run(`
     BaseUser = schema.object({
       name: schema.string(),
       email: schema.string()
@@ -448,8 +448,8 @@ Deno.test("Schema - extend basic object", () => {
   }
 });
 
-Deno.test("Schema - extend fails on missing base field", () => {
-  const result = run(`
+Deno.test("Schema - extend fails on missing base field", async () => {
+  const result = await run(`
     BaseUser = schema.object({
       name: schema.string(),
       email: schema.string()
@@ -470,8 +470,8 @@ Deno.test("Schema - extend fails on missing base field", () => {
   if (!result.ok) assertEquals(result.error.includes("email"), true);
 });
 
-Deno.test("Schema - extend fails on missing extended field", () => {
-  const result = run(`
+Deno.test("Schema - extend fails on missing extended field", async () => {
+  const result = await run(`
     BaseUser = schema.object({
       name: schema.string()
     })
@@ -490,8 +490,8 @@ Deno.test("Schema - extend fails on missing extended field", () => {
   if (!result.ok) assertEquals(result.error.includes("role"), true);
 });
 
-Deno.test("Schema - extend can be chained multiple times", () => {
-  const result = run(`
+Deno.test("Schema - extend can be chained multiple times", async () => {
+  const result = await run(`
     Base = schema.object({
       id: schema.number()
     })
@@ -515,8 +515,8 @@ Deno.test("Schema - extend can be chained multiple times", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - extend with optional fields", () => {
-  const result = run(`
+Deno.test("Schema - extend with optional fields", async () => {
+  const result = await run(`
     Base = schema.object({
       name: schema.string()
     })
@@ -534,8 +534,8 @@ Deno.test("Schema - extend with optional fields", () => {
   assertEquals(result.ok, true);
 });
 
-Deno.test("Schema - extend can override parent field", () => {
-  const result = run(`
+Deno.test("Schema - extend can override parent field", async () => {
+  const result = await run(`
     Base = schema.object({
       value: schema.string()
     })
