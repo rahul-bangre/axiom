@@ -4,5 +4,6 @@ export * from "./array.ts";
 export * from "./json.ts";
 export * from "./schema.ts";
 export * from "./http.ts";
+export * from "./server.ts";
 export * from "./set.ts";
 export * from "./map.ts";

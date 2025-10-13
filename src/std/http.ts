@@ -9,6 +9,7 @@ import type {
 } from "../runtime/value.ts";
 import { ValueType } from "../runtime/value.ts";
 import { jsToRuntimeValue } from "./json.ts";
+import { http_delete, http_get, http_patch, http_post, http_put, http_server } from "./server.ts";
 
 function createResultObject(ok_value: boolean, value?: RuntimeValue, error?: string): ObjectValue {
   const properties = new Map<string, RuntimeValue>();
@@ -31,14 +32,16 @@ function createJsonMethod(body: string): NativeFunctionValue {
     type: ValueType.NATIVE_FUNCTION,
     name: "json",
     return_type: "async object",
-    call: async (): Promise<Result<RuntimeValue>> => {
+    call: (): Promise<Result<RuntimeValue>> => {
       try {
         const parsed = JSON.parse(body);
         const runtime_value = jsToRuntimeValue(parsed);
-        return ok(createResultObject(true, runtime_value));
+        return Promise.resolve(ok(createResultObject(true, runtime_value)));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return ok(createResultObject(false, undefined, `Failed to parse JSON: ${message}`));
+        return Promise.resolve(
+          ok(createResultObject(false, undefined, `Failed to parse JSON: ${message}`)),
+        );
       }
     },
   };
@@ -74,7 +77,7 @@ function createResponseObject(
 
 function extractRequestOptions(
   options_value?: RuntimeValue,
-): { headers?: Record<string, string>; body?: string } | null {
+): { method?: string; headers?: Record<string, string>; body?: string } | null {
   if (!options_value) {
     return {};
   }
@@ -84,7 +87,15 @@ function extractRequestOptions(
   }
 
   const options_obj = options_value as ObjectValue;
-  const result: { headers?: Record<string, string>; body?: string } = {};
+  const result: { method?: string; headers?: Record<string, string>; body?: string } = {};
+
+  const method_val = options_obj.properties.get("method");
+  if (method_val) {
+    if (method_val.type !== ValueType.STRING) {
+      return null;
+    }
+    result.method = (method_val as StringValue).value;
+  }
 
   const headers_val = options_obj.properties.get("headers");
   if (headers_val) {
@@ -112,134 +123,48 @@ function extractRequestOptions(
   return result;
 }
 
-async function httpRequest(
-  url: string,
-  method: string,
-  options?: RuntimeValue,
-): Promise<Result<RuntimeValue>> {
-  const request_options = extractRequestOptions(options);
-  if (request_options === null) {
-    const error_msg =
-      `${method} options must be an object with optional 'headers' (object) and 'body' (string)`;
-    return ok(createResultObject(false, undefined, error_msg));
-  }
-
-  try {
-    const fetch_options: RequestInit = {
-      method,
-      headers: request_options.headers,
-      body: request_options.body,
-    };
-
-    const response = await fetch(url, fetch_options);
-    const body = await response.text();
-
-    const response_obj = createResponseObject(response.status, response.headers, body);
-    return ok(createResultObject(true, response_obj));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return ok(createResultObject(false, undefined, `Network error: ${message}`));
-  }
-}
-
-const http_get: NativeFunctionValue = {
+const http_fetch: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
-  name: "get",
-  return_type: "async object",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
-    if (args.length !== 1) {
-      return runtimeError("http.get() expects exactly 1 argument (url)");
-    }
-
-    const url_arg = args[0];
-    if (url_arg.type !== ValueType.STRING) {
-      return typeError("http.get() requires a string URL");
-    }
-
-    const url = (url_arg as StringValue).value;
-    return await httpRequest(url, "GET");
-  },
-};
-
-const http_post: NativeFunctionValue = {
-  type: ValueType.NATIVE_FUNCTION,
-  name: "post",
+  name: "fetch",
   return_type: "async object",
   call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length < 1 || args.length > 2) {
-      return runtimeError("http.post() expects 1-2 arguments (url, options?)");
+      return runtimeError("http.fetch() expects 1-2 arguments (url, options?)");
     }
 
     const url_arg = args[0];
     if (url_arg.type !== ValueType.STRING) {
-      return typeError("http.post() requires a string URL");
+      return typeError("http.fetch() requires a string URL");
     }
 
     const url = (url_arg as StringValue).value;
-    const options = args.length === 2 ? args[1] : undefined;
+    const options_arg = args.length === 2 ? args[1] : undefined;
 
-    return await httpRequest(url, "POST", options);
-  },
-};
-
-const http_put: NativeFunctionValue = {
-  type: ValueType.NATIVE_FUNCTION,
-  name: "put",
-  return_type: "async object",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
-    if (args.length < 1 || args.length > 2) {
-      return runtimeError("http.put() expects 1-2 arguments (url, options?)");
+    const request_options = extractRequestOptions(options_arg);
+    if (request_options === null) {
+      const error_msg =
+        "http.fetch() options must be an object with optional 'method', 'headers', and 'body'";
+      return ok(createResultObject(false, undefined, error_msg));
     }
 
-    const url_arg = args[0];
-    if (url_arg.type !== ValueType.STRING) {
-      return typeError("http.put() requires a string URL");
+    const method = request_options.method || "GET";
+
+    try {
+      const fetch_options: RequestInit = {
+        method,
+        headers: request_options.headers,
+        body: request_options.body,
+      };
+
+      const response = await fetch(url, fetch_options);
+      const body = await response.text();
+
+      const response_obj = createResponseObject(response.status, response.headers, body);
+      return ok(createResultObject(true, response_obj));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return ok(createResultObject(false, undefined, `Network error: ${message}`));
     }
-
-    const url = (url_arg as StringValue).value;
-    const options = args.length === 2 ? args[1] : undefined;
-
-    return await httpRequest(url, "PUT", options);
-  },
-};
-
-const http_delete: NativeFunctionValue = {
-  type: ValueType.NATIVE_FUNCTION,
-  name: "delete",
-  return_type: "async object",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
-    if (args.length !== 1) {
-      return runtimeError("http.delete() expects exactly 1 argument (url)");
-    }
-
-    const url_arg = args[0];
-    if (url_arg.type !== ValueType.STRING) {
-      return typeError("http.delete() requires a string URL");
-    }
-
-    const url = (url_arg as StringValue).value;
-    return await httpRequest(url, "DELETE");
-  },
-};
-
-const http_patch: NativeFunctionValue = {
-  type: ValueType.NATIVE_FUNCTION,
-  name: "patch",
-  return_type: "async object",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
-    if (args.length < 1 || args.length > 2) {
-      return runtimeError("http.patch() expects 1-2 arguments (url, options?)");
-    }
-
-    const url_arg = args[0];
-    if (url_arg.type !== ValueType.STRING) {
-      return typeError("http.patch() requires a string URL");
-    }
-
-    const url = (url_arg as StringValue).value;
-    const options = args.length === 2 ? args[1] : undefined;
-
-    return await httpRequest(url, "PATCH", options);
   },
 };
 
@@ -247,11 +172,13 @@ export function createHttpNamespace(): ObjectValue {
   return {
     type: ValueType.OBJECT,
     properties: new Map([
+      ["fetch", http_fetch],
       ["get", http_get],
       ["post", http_post],
       ["put", http_put],
-      ["delete", http_delete],
       ["patch", http_patch],
+      ["delete", http_delete],
+      ["server", http_server],
     ]),
   };
 }

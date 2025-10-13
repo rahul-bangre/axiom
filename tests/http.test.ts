@@ -33,9 +33,9 @@ async function runExpectError(source: string): Promise<string> {
   return result.error;
 }
 
-Deno.test("HTTP - http.get returns async result object", async () => {
+Deno.test("HTTP - http.fetch returns async result object", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     result
   `);
 
@@ -45,9 +45,9 @@ Deno.test("HTTP - http.get returns async result object", async () => {
   assertEquals(obj.properties.has("value"), true);
 });
 
-Deno.test("HTTP - http.get success has response with status", async () => {
+Deno.test("HTTP - http.fetch success has response with status", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     if (!result.ok) {
       return -1
     }
@@ -59,9 +59,9 @@ Deno.test("HTTP - http.get success has response with status", async () => {
   assertEquals(status, 200);
 });
 
-Deno.test("HTTP - http.get response has body", async () => {
+Deno.test("HTTP - http.fetch response has body", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     if (!result.ok) {
       return "error"
     }
@@ -72,9 +72,9 @@ Deno.test("HTTP - http.get response has body", async () => {
   assertEquals((result as any).value, "string");
 });
 
-Deno.test("HTTP - http.get response has headers", async () => {
+Deno.test("HTTP - http.fetch response has headers", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     if (!result.ok) {
       return "error"
     }
@@ -87,7 +87,7 @@ Deno.test("HTTP - http.get response has headers", async () => {
 
 Deno.test("HTTP - response.json() returns parsed object", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     if (!result.ok) {
       return null
     }
@@ -107,10 +107,11 @@ Deno.test("HTTP - response.json() returns parsed object", async () => {
   assertEquals((result as any).value, "Leanne Graham");
 });
 
-Deno.test("HTTP - http.post with body", async () => {
+Deno.test("HTTP - http.fetch POST with body", async () => {
   const result = await run(`
     data = {title: "test", body: "content", userId: 1}
-    result = await http.post("https://jsonplaceholder.typicode.com/posts", {
+    result = await http.fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
       body: json.stringify(data)
     })
     
@@ -124,10 +125,11 @@ Deno.test("HTTP - http.post with body", async () => {
   assertEquals((result as any).value, 201);
 });
 
-Deno.test("HTTP - http.put updates resource", async () => {
+Deno.test("HTTP - http.fetch PUT updates resource", async () => {
   const result = await run(`
     data = {id: 1, title: "updated", body: "new content", userId: 1}
-    result = await http.put("https://jsonplaceholder.typicode.com/posts/1", {
+    result = await http.fetch("https://jsonplaceholder.typicode.com/posts/1", {
+      method: "PUT",
       body: json.stringify(data)
     })
     
@@ -141,9 +143,11 @@ Deno.test("HTTP - http.put updates resource", async () => {
   assertEquals((result as any).value, 200);
 });
 
-Deno.test("HTTP - http.delete removes resource", async () => {
+Deno.test("HTTP - http.fetch DELETE removes resource", async () => {
   const result = await run(`
-    result = await http.delete("https://jsonplaceholder.typicode.com/posts/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/posts/1", {
+      method: "DELETE"
+    })
     
     if (!result.ok) {
       return -1
@@ -155,10 +159,11 @@ Deno.test("HTTP - http.delete removes resource", async () => {
   assertEquals((result as any).value, 200);
 });
 
-Deno.test("HTTP - http.patch updates resource partially", async () => {
+Deno.test("HTTP - http.fetch PATCH updates resource partially", async () => {
   const result = await run(`
     data = {title: "patched"}
-    result = await http.patch("https://jsonplaceholder.typicode.com/posts/1", {
+    result = await http.fetch("https://jsonplaceholder.typicode.com/posts/1", {
+      method: "PATCH",
       body: json.stringify(data)
     })
     
@@ -174,7 +179,7 @@ Deno.test("HTTP - http.patch updates resource partially", async () => {
 
 Deno.test("HTTP - 404 response is success with 404 status", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/999999")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/999999")
     
     if (!result.ok) {
       return -1
@@ -188,7 +193,7 @@ Deno.test("HTTP - 404 response is success with 404 status", async () => {
 
 Deno.test("HTTP - invalid URL returns error result", async () => {
   const result = await run(`
-    result = await http.get("not-a-valid-url")
+    result = await http.fetch("not-a-valid-url")
     result.ok
   `);
 
@@ -196,33 +201,25 @@ Deno.test("HTTP - invalid URL returns error result", async () => {
   assertEquals((result as any).value, false);
 });
 
-Deno.test("HTTP - http.get requires string URL", async () => {
+Deno.test("HTTP - http.fetch requires string URL", async () => {
   const error = await runExpectError(`
-    result = await http.get(123)
+    result = await http.fetch(123)
   `);
 
   assertEquals(error.includes("requires a string URL"), true);
 });
 
-Deno.test("HTTP - http.post requires string URL", async () => {
+Deno.test("HTTP - http.fetch requires 1-2 arguments", async () => {
   const error = await runExpectError(`
-    result = await http.post(true)
+    result = await http.fetch()
   `);
 
-  assertEquals(error.includes("requires a string URL"), true);
+  assertEquals(error.includes("expects 1-2 arguments"), true);
 });
 
-Deno.test("HTTP - http.get requires exactly 1 argument", async () => {
-  const error = await runExpectError(`
-    result = await http.get()
-  `);
-
-  assertEquals(error.includes("expects exactly 1 argument"), true);
-});
-
-Deno.test("HTTP - http.post accepts 1-2 arguments", async () => {
+Deno.test("HTTP - http.fetch accepts optional options", async () => {
   const result = await run(`
-    result = await http.post("https://jsonplaceholder.typicode.com/posts")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/posts")
     result.ok
   `);
 
@@ -231,7 +228,7 @@ Deno.test("HTTP - http.post accepts 1-2 arguments", async () => {
 
 Deno.test("HTTP - response.json() on invalid JSON returns error", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/")
     if (!result.ok) {
       return false
     }
@@ -246,7 +243,7 @@ Deno.test("HTTP - response.json() on invalid JSON returns error", async () => {
 
 Deno.test("HTTP - can access nested JSON properties", async () => {
   const result = await run(`
-    result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+    result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
     if (!result.ok) {
       return null
     }
@@ -271,15 +268,17 @@ Deno.test("HTTP - http object exists in global scope", async () => {
   assertEquals((result as any).value, "object");
 });
 
-Deno.test("HTTP - http has all CRUD methods", async () => {
+Deno.test("HTTP - http has all methods", async () => {
   const result = await run(`
+    has_fetch = typeof(http.fetch) == "function"
     has_get = typeof(http.get) == "function"
     has_post = typeof(http.post) == "function"
     has_put = typeof(http.put) == "function"
     has_delete = typeof(http.delete) == "function"
     has_patch = typeof(http.patch) == "function"
+    has_server = typeof(http.server) == "function"
     
-    has_get && has_post && has_put && has_delete && has_patch
+    has_fetch && has_get && has_post && has_put && has_delete && has_patch && has_server
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);

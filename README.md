@@ -209,7 +209,7 @@ admin_schema = user_schema.extend({
 
 ```axiom
 // GET request
-result = await http.get("https://api.example.com/users/1")
+result = await http.fetch("https://api.example.com/users/1")
 
 if (!result.ok) {
   print("Network error:", result.error)
@@ -228,7 +228,8 @@ if (json_result.ok) {
 
 // POST with JSON body
 post_data = {title: "Hello", body: "World", userId: 1}
-post_result = await http.post("https://api.example.com/posts", {
+post_result = await http.fetch("https://api.example.com/posts", {
+  method: "POST",
   body: json.stringify(post_data)
 })
 
@@ -237,6 +238,71 @@ if (response.status >= 400) {
   print("HTTP error:", response.status)
 }
 ```
+
+### HTTP Server
+
+Build REST APIs with declarative routing, middleware, and path parameters.
+
+> **Note:** HTTP server requires Deno runtime and only works via CLI (`deno run --allow-net`), not in the browser playground.
+
+```axiom
+// Define handlers
+fn get_users(req) {
+  users = [{id: 1, name: "Alice"}, {id: 2, name: "Bob"}]
+  return {
+    status: 200,
+    headers: {"Content-Type": "application/json"},
+    body: json.stringify(users)
+  }
+}
+
+fn get_user_by_id(req) {
+  id = req.params.id
+  return {
+    status: 200,
+    body: "User ID: " + id
+  }
+}
+
+// Middleware
+fn logger(req) {
+  print("[" + req.method + "]", req.path)
+  return req
+}
+
+fn auth(req) {
+  token = req.headers.authorization
+  if (token == null) {
+    return {
+      status: 401,
+      body: json.stringify({error: "Unauthorized"})
+    }
+  }
+  return req
+}
+
+// Configure server
+config = {
+  middleware: [logger],
+  routes: [
+    http.get("/users", get_users),
+    http.get("/users/:id", get_user_by_id),
+    http.post("/users", [auth, create_user])
+  ]
+}
+
+// Start server (blocking)
+http.server(8000, config)
+```
+
+**Features:**
+
+- ✅ Path parameters (`:id`, `:slug`)
+- ✅ Query string parsing (`req.query`)
+- ✅ Global middleware (runs for all routes)
+- ✅ Per-route middleware (e.g., auth)
+- ✅ Request object: `{method, path, body, headers, params, query}`
+- ✅ Middleware can transform request or return early response
 
 ## Built-in Functions
 
@@ -348,18 +414,49 @@ user = cache2.get("user_1")    // "Alice"
 
 ### HTTP Client
 
-- `http.get(url)` - perform GET request
-- `http.post(url, options?)` - perform POST request
-- `http.put(url, options?)` - perform PUT request
-- `http.delete(url)` - perform DELETE request
-- `http.patch(url, options?)` - perform PATCH request
+- `http.fetch(url, options?)` - perform HTTP request
 
-All HTTP methods return `async Result<Response>` where:
+**Options:**
+
+- `method` (string) - HTTP method (GET, POST, PUT, DELETE, PATCH). Defaults to "GET"
+- `headers` (object) - request headers
+- `body` (string) - request body
+
+Returns `async Result<Response>` where:
 
 - `Response` contains: `status` (int), `headers` (object), `body` (string), `json()` (async
   function)
 - Network errors are captured in `Result.error`
 - HTTP status codes (like 404) are part of the successful `Response`
+
+### HTTP Server
+
+- `http.get(path, handler | [handlers])` - define GET route
+- `http.post(path, handler | [handlers])` - define POST route
+- `http.put(path, handler | [handlers])` - define PUT route
+- `http.patch(path, handler | [handlers])` - define PATCH route
+- `http.delete(path, handler | [handlers])` - define DELETE route
+- `http.server(port, config)` - start HTTP server (blocking)
+
+**Config:**
+
+- `middleware` - array of global middleware functions
+- `routes` - array of route definitions (from `http.get`, `http.post`, etc.)
+
+**Request object:**
+
+- `method` - HTTP method string
+- `path` - request path
+- `body` - request body string
+- `headers` - request headers object
+- `params` - path parameters object (`:id` → `req.params.id`)
+- `query` - query parameters object (`?foo=bar` → `req.query.foo`)
+
+**Response object:**
+
+- `status` - HTTP status code (defaults to 200)
+- `headers` - response headers object (optional)
+- `body` - response body string
 
 ## Development
 

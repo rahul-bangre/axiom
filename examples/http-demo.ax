@@ -2,7 +2,7 @@ print("=== HTTP Client Demo ===")
 print("")
 
 print("--- Example 1: Simple GET Request ---")
-result = await http.get("https://jsonplaceholder.typicode.com/users/1")
+result = await http.fetch("https://jsonplaceholder.typicode.com/users/1")
 
 if (!result.ok) {
   print("Network error:", result.error)
@@ -34,7 +34,8 @@ post_data = {
   userId: 1
 }
 
-post_result = await http.post("https://jsonplaceholder.typicode.com/posts", {
+post_result = await http.fetch("https://jsonplaceholder.typicode.com/posts", {
+  method: "POST",
   body: json.stringify(post_data)
 })
 
@@ -54,7 +55,7 @@ if (created_result.ok) {
 
 print("")
 print("--- Example 3: Handling HTTP Errors (404) ---")
-not_found_result = await http.get("https://jsonplaceholder.typicode.com/users/999999")
+not_found_result = await http.fetch("https://jsonplaceholder.typicode.com/users/999999")
 
 if (!not_found_result.ok) {
   print("Network error:", not_found_result.error)
@@ -82,7 +83,8 @@ update_data = {
   userId: 1
 }
 
-put_result = await http.put("https://jsonplaceholder.typicode.com/posts/1", {
+put_result = await http.fetch("https://jsonplaceholder.typicode.com/posts/1", {
+  method: "PUT",
   body: json.stringify(update_data)
 })
 
@@ -98,7 +100,9 @@ if (put_result.ok) {
 
 print("")
 print("--- Example 5: DELETE Request ---")
-delete_result = await http.delete("https://jsonplaceholder.typicode.com/posts/1")
+delete_result = await http.fetch("https://jsonplaceholder.typicode.com/posts/1", {
+  method: "DELETE"
+})
 
 if (delete_result.ok) {
   delete_response = delete_result.value

@@ -1,0 +1,125 @@
+print("🚀 Starting Axiom REST API Server...")
+print("")
+
+users = [
+  { id: 1, name: "Alice", email: "alice@example.com" },
+  { id: 2, name: "Bob", email: "bob@example.com" },
+  { id: 3, name: "Charlie", email: "charlie@example.com" }
+]
+
+fn logger(req) {
+  print("[" + req.method + "]", req.path)
+  return req
+}
+
+fn cors(req) {
+  print("  ✓ CORS enabled")
+  return req
+}
+
+fn auth(req) {
+  print("  ✓ Auth check (simplified)")
+  return req
+}
+
+fn get_users(req) {
+  return {
+    status: 200,
+    body: json.stringify(users)
+  }
+}
+
+fn get_user_by_id(req) {
+  id_str = req.params.id
+  
+  fn parse_id(s, i, acc) {
+    if (i >= len(s)) {
+      return acc
+    }
+    digit = s.charAt(i)
+    value = match(digit,
+      "0" -> 0,
+      "1" -> 1,
+      "2" -> 2,
+      "3" -> 3,
+      "4" -> 4,
+      "5" -> 5,
+      "6" -> 6,
+      "7" -> 7,
+      "8" -> 8,
+      "9" -> 9,
+      default -> -1
+    )
+    return parse_id(s, i + 1, acc * 10 + value)
+  }
+  
+  user_id = parse_id(id_str, 0, 0)
+  
+  fn find_user(i) {
+    if (i >= len(users)) {
+      return null
+    }
+    user = users[i]
+    if (user.id == user_id) {
+      return user
+    }
+    return find_user(i + 1)
+  }
+  
+  user = find_user(0)
+  
+  if (user == null) {
+    return {
+      status: 404,
+      body: json.stringify({ error: "User not found" })
+    }
+  }
+  
+  return {
+    status: 200,
+    body: json.stringify(user)
+  }
+}
+
+fn create_user(req) {
+  new_user = json.parse(req.body)
+  
+  return {
+    status: 201,
+    body: json.stringify(new_user)
+  }
+}
+
+fn health_check(req) {
+  return {
+    status: 200,
+    body: json.stringify({
+      status: "healthy",
+      timestamp: "2025-01-01T00:00:00Z",
+      uptime: "24h"
+    })
+  }
+}
+
+config = {
+  middleware: [logger, cors],
+  routes: [
+    http.get("/health", health_check),
+    http.get("/users", get_users),
+    http.get("/users/:id", get_user_by_id),
+    http.post("/users", [auth, create_user])
+  ]
+}
+
+print("Routes configured:")
+print("  GET  /health - Health check endpoint")
+print("  GET  /users - List all users")
+print("  GET  /users/:id - Get user by ID")
+print("  POST /users - Create new user (requires auth)")
+print("")
+print("Global middleware: logger, cors")
+print("Protected routes: POST /users (requires Authorization header)")
+print("")
+
+http.server(8000, config)
+
