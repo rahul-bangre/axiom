@@ -5,6 +5,7 @@ import type { RuntimeValue } from "@runtime";
 import { ok, runtimeError } from "@types";
 import type { Result } from "@types";
 import type { VirtualFS } from "./virtual-fs";
+import { math_namespace } from "@std";
 
 export interface ModuleExports {
   exports: Map<string, RuntimeValue>;
@@ -26,6 +27,10 @@ export class BrowserModuleLoader {
     base_path: string,
     global_env: Environment,
   ): Promise<Result<ModuleExports>> {
+    if (import_path.startsWith("std:")) {
+      return this.loadStdModule(import_path);
+    }
+
     const resolved_path = this.resolvePath(import_path, base_path);
     const previous_file = this.current_file;
     this.current_file = resolved_path;
@@ -88,7 +93,7 @@ export class BrowserModuleLoader {
   loadStdModule(import_path: string): Result<ModuleExports> {
     const module_name = import_path.substring(4);
 
-    const cli_only_modules = ["db", "fs", "math"];
+    const cli_only_modules = ["db", "fs", "server"];
 
     if (cli_only_modules.includes(module_name)) {
       return runtimeError(
@@ -97,7 +102,25 @@ export class BrowserModuleLoader {
       );
     }
 
-    return runtimeError(`Unknown standard library module: std:${module_name}`);
+    const browser_modules: Record<string, Record<string, RuntimeValue>> = {
+      math: math_namespace,
+    };
+
+    if (!(module_name in browser_modules)) {
+      return runtimeError(`Unknown standard library module: std:${module_name}`);
+    }
+
+    const namespace = browser_modules[module_name];
+    const exports_map = new Map<string, RuntimeValue>();
+
+    for (const [key, value] of Object.entries(namespace)) {
+      exports_map.set(key, value);
+    }
+
+    return ok({
+      exports: exports_map,
+      path: import_path,
+    });
   }
 
   resolvePath(import_path: string, base_path: string): string {

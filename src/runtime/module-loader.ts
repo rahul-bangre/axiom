@@ -1,13 +1,10 @@
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
 import { Environment } from "./environment.ts";
-import { ObjectValue, RuntimeValue, ValueType } from "./value.ts";
+import { RuntimeValue } from "./value.ts";
 import { evaluate } from "./evaluator.ts";
 import { ok, Result, runtimeError } from "../types/result.ts";
 import { dirname, isAbsolute, join, resolve } from "https://deno.land/std@0.208.0/path/mod.ts";
-import { fs_namespace } from "../std/fs.ts";
-import { math_namespace } from "../std/math.ts";
-import { db_namespace } from "../std/db.ts";
 
 export interface ModuleExports {
   exports: Map<string, RuntimeValue>;
@@ -25,7 +22,7 @@ export class ModuleLoader {
     global_env: Environment,
   ): Promise<Result<ModuleExports>> {
     if (import_path.startsWith("std:")) {
-      return this.loadStdModule(import_path);
+      return await this.loadStdModule(import_path);
     }
 
     const resolved_path = this.resolvePath(import_path, base_path);
@@ -82,21 +79,34 @@ export class ModuleLoader {
     }
   }
 
-  loadStdModule(import_path: string): Result<ModuleExports> {
+  async loadStdModule(import_path: string): Promise<Result<ModuleExports>> {
     const module_name = import_path.substring(4);
 
-    const std_modules: Record<string, Record<string, RuntimeValue>> = {
-      fs: fs_namespace,
-      math: math_namespace,
-      db: db_namespace,
-    };
+    let namespace: Record<string, RuntimeValue>;
 
-    if (!(module_name in std_modules)) {
-      return runtimeError(`Unknown standard library module: ${module_name}`);
+    try {
+      switch (module_name) {
+        case "fs":
+          namespace = (await import("../std/fs.ts")).fs_namespace;
+          break;
+        case "math":
+          namespace = (await import("../std/math.ts")).math_namespace;
+          break;
+        case "db":
+          namespace = (await import("../std/db.ts")).db_namespace;
+          break;
+        default:
+          return runtimeError(`Unknown standard library module: ${module_name}`);
+      }
+    } catch (error) {
+      const err = error as Error;
+      return runtimeError(
+        `Failed to load standard library module '${module_name}': ${err.message}`,
+      );
     }
 
     const exports_map = new Map<string, RuntimeValue>();
-    for (const [key, value] of Object.entries(std_modules[module_name])) {
+    for (const [key, value] of Object.entries(namespace)) {
       exports_map.set(key, value);
     }
 

@@ -32,7 +32,7 @@
       "@parser": ["../src/parser/mod.ts"],
       "@runtime": ["../src/runtime/mod.ts"],
       "@types": ["../src/types/mod.ts"],
-      "@std": ["../src/std/mod.ts"],
+      "@std": ["../src/std/browser.ts"],
       "@repl": ["../src/repl/mod.ts"]
     }
   },

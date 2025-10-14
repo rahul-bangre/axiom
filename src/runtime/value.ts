@@ -16,6 +16,7 @@ export enum ValueType {
   COLLECTION,
   QUERY_BUILDER,
   TRANSACTION,
+  WEBSOCKET_CONNECTION,
 }
 
 export interface RuntimeValue {
@@ -103,4 +104,14 @@ export interface TransactionValue extends RuntimeValue {
   type: ValueType.TRANSACTION;
   database: DatabaseValue;
   active: boolean;
+}
+
+export interface WebSocketConnectionValue extends RuntimeValue {
+  type: ValueType.WEBSOCKET_CONNECTION;
+  socket: WebSocket;
+  url: string;
+  isServer: boolean;
+  messageQueue: string[];
+  resolvers: Array<(message: string) => void>;
+  closed: boolean;
 }

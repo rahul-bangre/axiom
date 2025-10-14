@@ -33,7 +33,7 @@ export default defineConfig({
       "@parser": path.resolve(__dirname, "../src/parser/mod"),
       "@runtime": path.resolve(__dirname, "../src/runtime/mod"),
       "@types": path.resolve(__dirname, "../src/types/mod"),
-      "@std": path.resolve(__dirname, "../src/std/mod"),
+      "@std": path.resolve(__dirname, "../src/std/browser"),
     },
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     mainFields: ["module", "main"],
