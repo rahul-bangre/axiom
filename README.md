@@ -365,6 +365,73 @@ http.server(8000, config)
 - ✅ Request object: `{method, path, body, headers, params, query}`
 - ✅ Middleware can transform request or return early response
 
+### WebSocket (std:ws)
+
+Real-time bidirectional communication with WebSocket support for both client and server.
+
+> **Note:** WebSocket requires Deno runtime and only works via CLI (`deno run --allow-net`), not in
+> the browser playground.
+
+```axiom
+use "std:ws" as ws
+
+// Client: Connect to WebSocket server
+conn = await ws.connect("wss://echo.websocket.org")
+
+// Send message
+await ws.send(conn, "Hello, WebSocket!")
+
+// Receive message (blocks until message arrives)
+message = await ws.recv(conn)
+print("Received:", message)
+
+// Close connection
+await ws.close(conn)
+
+// Server: Create WebSocket server
+fn handleConnection(conn): async void {
+  // Send welcome message
+  await ws.send(conn, "Welcome to Axiom WS Server!")
+  
+  // Echo loop
+  fn echoLoop(count): async void {
+    if (count > 10) {
+      await ws.close(conn)
+      return null
+    }
+    
+    msg = await ws.recv(conn)
+    print("Client says:", msg)
+    
+    await ws.send(conn, "Echo: " + msg)
+    
+    return await echoLoop(count + 1)
+  }
+  
+  await echoLoop(0)
+  return null
+}
+
+// Start server on port 8080
+await ws.server(8080, handleConnection)
+```
+
+**Available Functions:**
+
+- `ws.connect(url)` - Connect to WebSocket server, returns `WebSocketConnection`
+- `ws.send(conn, message)` - Send text message to connection
+- `ws.recv(conn)` - Receive next message (blocks until message arrives)
+- `ws.close(conn)` - Close WebSocket connection
+- `ws.server(port, handler)` - Start WebSocket server with handler function
+
+**Features:**
+
+- ✅ Client and server support
+- ✅ Async message send/receive
+- ✅ Functional message handling (no callbacks)
+- ✅ Automatic message queueing
+- ✅ Clean connection lifecycle
+
 ### File System (std:fs)
 
 > **Note:** File I/O requires Deno runtime and only works via CLI

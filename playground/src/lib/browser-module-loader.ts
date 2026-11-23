@@ -93,7 +93,7 @@ export class BrowserModuleLoader {
   loadStdModule(import_path: string): Result<ModuleExports> {
     const module_name = import_path.substring(4);
 
-    const cli_only_modules = ["db", "fs", "server"];
+    const cli_only_modules = ["db", "fs", "server", "ws"];
 
     if (cli_only_modules.includes(module_name)) {
       return runtimeError(

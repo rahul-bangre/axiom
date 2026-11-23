@@ -1,0 +1,74 @@
+use "std:ws" as ws
+
+print("=== Axiom WebSocket Demo ===")
+print("")
+
+print("--- Example 1: Echo Client ---")
+print("Connecting to echo.websocket.org...")
+
+fn echoClient(): async void {
+  conn = await ws.connect("wss://echo.websocket.org")
+  print("✓ Connected!")
+
+  // echo.websocket.org sends a greeting banner before it starts echoing
+  banner = await ws.recv(conn)
+  print("  Server says:", banner)
+  
+  await ws.send(conn, "Hello from Axiom!")
+  print("  Sent: Hello from Axiom!")
+  
+  response = await ws.recv(conn)
+  print("  Received:", response)
+  
+  await ws.send(conn, "WebSockets are functional!")
+  print("  Sent: WebSockets are functional!")
+  
+  response2 = await ws.recv(conn)
+  print("  Received:", response2)
+  
+  await ws.close(conn)
+  print("✓ Connection closed")
+  
+  return null
+}
+
+await echoClient()
+
+print("")
+print("--- Example 2: Local Echo Server ---")
+print("Starting WebSocket server on port 8080...")
+print("(In another terminal, connect with: wscat -c ws://localhost:8080)")
+print("")
+
+fn echoHandler(conn) {
+  print("  ✓ Client connected")
+  
+  await ws.send(conn, "Welcome to Axiom WebSocket Server!")
+  
+  fn handleMessages(count): async void {
+    if (count > 5) {
+      print("  ⚠ Message limit reached, closing connection")
+      await ws.close(conn)
+      return null
+    }
+    
+    msg = await ws.recv(conn)
+    print("  Received:", msg)
+    
+    echo_msg = "Echo: " + msg
+    await ws.send(conn, echo_msg)
+    print("  Sent:", echo_msg)
+    
+    return await handleMessages(count + 1)
+  }
+  
+  await handleMessages(0)
+  
+  return null
+}
+
+print("Server ready! Press Ctrl+C to stop.")
+print("")
+
+await ws.server(8080, echoHandler)
+

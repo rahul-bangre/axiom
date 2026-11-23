@@ -95,6 +95,9 @@ export class ModuleLoader {
         case "db":
           namespace = (await import("../std/db.ts")).db_namespace;
           break;
+        case "ws":
+          namespace = (await import("../std/ws.ts")).ws_namespace;
+          break;
         default:
           return runtimeError(`Unknown standard library module: ${module_name}`);
       }

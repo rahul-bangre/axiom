@@ -363,13 +363,19 @@ async function callFunction(
 
   if (callee.type === ValueType.NATIVE_FUNCTION) {
     const native_func = callee as NativeFunctionValue;
-    const result = await native_func.call(args);
-    if (!result.ok) return result;
 
     if (native_func.return_type && native_func.return_type.startsWith("async")) {
-      return ok(makeAsyncValue(Promise.resolve(result.value)));
+      const promise = native_func.call(args).then((result) => {
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
+        return result.value;
+      });
+      return ok(makeAsyncValue(promise));
     }
 
+    const result = await native_func.call(args);
+    if (!result.ok) return result;
     return result;
   }
 
@@ -465,6 +471,9 @@ async function evaluateUnaryExpr(
         break;
       case ValueType.ASYNC:
         type_name = "async";
+        break;
+      case ValueType.WEBSOCKET_CONNECTION:
+        type_name = "websocket";
         break;
       default:
         type_name = "unknown";
@@ -822,9 +831,14 @@ async function evaluateAwaitExpr(
   }
 
   const async_val = value as AsyncValue;
-  const resolved = await async_val.promise;
 
-  return ok(resolved);
+  try {
+    const resolved = await async_val.promise;
+    return ok(resolved);
+  } catch (error) {
+    const err_msg = error instanceof Error ? error.message : String(error);
+    return runtimeError(err_msg);
+  }
 }
 
 async function evaluateMatchExpr(
