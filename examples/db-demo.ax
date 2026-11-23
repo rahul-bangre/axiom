@@ -1,6 +1,6 @@
 use "std:db" as db
 
-fn main() -> async null {
+fn main(): async void {
   print("=== Axiom Database Demo ===")
   print("")
   
