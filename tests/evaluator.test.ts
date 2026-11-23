@@ -1,7 +1,17 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  ArrayValue,
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function runRaw(source_code: string): Promise<Result<RuntimeValue>> {
@@ -31,61 +41,61 @@ async function runExpectError(source_code: string): Promise<string> {
 
 Deno.test("Evaluator - Number literal", async () => {
   const result_val = await run("42");
-  assertEquals((result_val as any).type, ValueType.NUMBER);
-  assertEquals((result_val as any).value, 42);
+  assertEquals(result_val.type, ValueType.NUMBER);
+  assertEquals((result_val as NumberValue).value, 42);
 });
 
 Deno.test("Evaluator - String literal", async () => {
   const result_val = await run('"hello"');
-  assertEquals((result_val as any).type, ValueType.STRING);
-  assertEquals((result_val as any).value, "hello");
+  assertEquals(result_val.type, ValueType.STRING);
+  assertEquals((result_val as StringValue).value, "hello");
 });
 
 Deno.test("Evaluator - Boolean literals", async () => {
   const result1 = await run("true");
-  assertEquals((result1 as any).type, ValueType.BOOLEAN);
-  assertEquals((result1 as any).value, true);
+  assertEquals(result1.type, ValueType.BOOLEAN);
+  assertEquals((result1 as BooleanValue).value, true);
 
   const result2 = await run("false");
-  assertEquals((result2 as any).value, false);
+  assertEquals((result2 as BooleanValue).value, false);
 });
 
 Deno.test("Evaluator - Null literal", async () => {
   const result_val = await run("null");
-  assertEquals((result_val as any).type, ValueType.NULL);
+  assertEquals(result_val.type, ValueType.NULL);
 });
 
 Deno.test("Evaluator - Arithmetic - addition", async () => {
   const result_val = await run("2 + 3");
-  assertEquals((result_val as any).value, 5);
+  assertEquals((result_val as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Arithmetic - subtraction", async () => {
   const result_val = await run("10 - 4");
-  assertEquals((result_val as any).value, 6);
+  assertEquals((result_val as NumberValue).value, 6);
 });
 
 Deno.test("Evaluator - Arithmetic - multiplication", async () => {
   const result = await run("3 * 4");
-  assertEquals((result as any).value, 12);
+  assertEquals((result as NumberValue).value, 12);
 });
 
 Deno.test("Evaluator - Arithmetic - division", async () => {
   const result = await run("15 / 3");
-  assertEquals((result as any).value, 5);
+  assertEquals((result as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Arithmetic - modulo", async () => {
   const result = await run("10 % 3");
-  assertEquals((result as any).value, 1);
+  assertEquals((result as NumberValue).value, 1);
 });
 
 Deno.test("Evaluator - Arithmetic - operator precedence", async () => {
   const result = await run("2 + 3 * 4");
-  assertEquals((result as any).value, 14);
+  assertEquals((result as NumberValue).value, 14);
 
   const result2 = await run("(2 + 3) * 4");
-  assertEquals((result2 as any).value, 20);
+  assertEquals((result2 as NumberValue).value, 20);
 });
 
 Deno.test("Evaluator - Arithmetic - division by zero", async () => {
@@ -94,85 +104,85 @@ Deno.test("Evaluator - Arithmetic - division by zero", async () => {
 });
 
 Deno.test("Evaluator - Comparison - equality", async () => {
-  assertEquals((await run("5 == 5") as any).value, true);
-  assertEquals((await run("5 == 3") as any).value, false);
-  assertEquals((await run("5 != 3") as any).value, true);
-  assertEquals((await run("5 != 5") as any).value, false);
+  assertEquals((await run("5 == 5") as BooleanValue).value, true);
+  assertEquals((await run("5 == 3") as BooleanValue).value, false);
+  assertEquals((await run("5 != 3") as BooleanValue).value, true);
+  assertEquals((await run("5 != 5") as BooleanValue).value, false);
 });
 
 Deno.test("Evaluator - Comparison - ordering", async () => {
-  assertEquals((await run("3 < 5") as any).value, true);
-  assertEquals((await run("5 < 3") as any).value, false);
-  assertEquals((await run("5 > 3") as any).value, true);
-  assertEquals((await run("3 > 5") as any).value, false);
-  assertEquals((await run("5 <= 5") as any).value, true);
-  assertEquals((await run("5 >= 5") as any).value, true);
+  assertEquals((await run("3 < 5") as BooleanValue).value, true);
+  assertEquals((await run("5 < 3") as BooleanValue).value, false);
+  assertEquals((await run("5 > 3") as BooleanValue).value, true);
+  assertEquals((await run("3 > 5") as BooleanValue).value, false);
+  assertEquals((await run("5 <= 5") as BooleanValue).value, true);
+  assertEquals((await run("5 >= 5") as BooleanValue).value, true);
 });
 
 Deno.test("Evaluator - Logical - AND", async () => {
-  assertEquals((await run("true && true") as any).value, true);
-  assertEquals((await run("true && false") as any).value, false);
-  assertEquals((await run("false && true") as any).value, false);
-  assertEquals((await run("false && false") as any).value, false);
+  assertEquals((await run("true && true") as BooleanValue).value, true);
+  assertEquals((await run("true && false") as BooleanValue).value, false);
+  assertEquals((await run("false && true") as BooleanValue).value, false);
+  assertEquals((await run("false && false") as BooleanValue).value, false);
 });
 
 Deno.test("Evaluator - Logical - OR", async () => {
-  assertEquals((await run("true || true") as any).value, true);
-  assertEquals((await run("true || false") as any).value, true);
-  assertEquals((await run("false || true") as any).value, true);
-  assertEquals((await run("false || false") as any).value, false);
+  assertEquals((await run("true || true") as BooleanValue).value, true);
+  assertEquals((await run("true || false") as BooleanValue).value, true);
+  assertEquals((await run("false || true") as BooleanValue).value, true);
+  assertEquals((await run("false || false") as BooleanValue).value, false);
 });
 
 Deno.test("Evaluator - Unary - negation", async () => {
-  assertEquals((await run("-5") as any).value, -5);
-  assertEquals((await run("-(-3)") as any).value, 3);
+  assertEquals((await run("-5") as NumberValue).value, -5);
+  assertEquals((await run("-(-3)") as NumberValue).value, 3);
 });
 
 Deno.test("Evaluator - Unary - logical NOT", async () => {
-  assertEquals((await run("!true") as any).value, false);
-  assertEquals((await run("!false") as any).value, true);
-  assertEquals((await run("!!true") as any).value, true);
+  assertEquals((await run("!true") as BooleanValue).value, false);
+  assertEquals((await run("!false") as BooleanValue).value, true);
+  assertEquals((await run("!!true") as BooleanValue).value, true);
 });
 
 Deno.test("Evaluator - Typeof - number", async () => {
-  assertEquals((await run("typeof 42") as any).value, "number");
-  assertEquals((await run("typeof 3.14") as any).value, "number");
-  assertEquals((await run("x = 5\ntypeof x") as any).value, "number");
+  assertEquals((await run("typeof 42") as StringValue).value, "number");
+  assertEquals((await run("typeof 3.14") as StringValue).value, "number");
+  assertEquals((await run("x = 5\ntypeof x") as StringValue).value, "number");
 });
 
 Deno.test("Evaluator - Typeof - string", async () => {
-  assertEquals((await run('typeof "hello"') as any).value, "string");
-  assertEquals((await run("s = 'test'\ntypeof s") as any).value, "string");
+  assertEquals((await run('typeof "hello"') as StringValue).value, "string");
+  assertEquals((await run("s = 'test'\ntypeof s") as StringValue).value, "string");
 });
 
 Deno.test("Evaluator - Typeof - boolean", async () => {
-  assertEquals((await run("typeof true") as any).value, "boolean");
-  assertEquals((await run("typeof false") as any).value, "boolean");
+  assertEquals((await run("typeof true") as StringValue).value, "boolean");
+  assertEquals((await run("typeof false") as StringValue).value, "boolean");
 });
 
 Deno.test("Evaluator - Typeof - null", async () => {
-  assertEquals((await run("typeof null") as any).value, "null");
+  assertEquals((await run("typeof null") as StringValue).value, "null");
 });
 
 Deno.test("Evaluator - Typeof - array", async () => {
-  assertEquals((await run("typeof [1, 2, 3]") as any).value, "array");
-  assertEquals((await run("arr = []\ntypeof arr") as any).value, "array");
+  assertEquals((await run("typeof [1, 2, 3]") as StringValue).value, "array");
+  assertEquals((await run("arr = []\ntypeof arr") as StringValue).value, "array");
 });
 
 Deno.test("Evaluator - Typeof - object", async () => {
-  assertEquals((await run("typeof {x: 1, y: 2}") as any).value, "object");
-  assertEquals((await run("obj = {}\ntypeof obj") as any).value, "object");
+  assertEquals((await run("typeof {x: 1, y: 2}") as StringValue).value, "object");
+  assertEquals((await run("obj = {}\ntypeof obj") as StringValue).value, "object");
 });
 
 Deno.test("Evaluator - Typeof - function", async () => {
-  assertEquals((await run("fn test() { return 1 }\ntypeof test") as any).value, "function");
-  assertEquals((await run("lambda = x => x * 2\ntypeof lambda") as any).value, "function");
+  assertEquals((await run("fn test() { return 1 }\ntypeof test") as StringValue).value, "function");
+  assertEquals((await run("lambda = x => x * 2\ntypeof lambda") as StringValue).value, "function");
 });
 
 Deno.test("Evaluator - Typeof - with expressions", async () => {
-  assertEquals((await run("typeof (5 + 3)") as any).value, "number");
-  assertEquals((await run("typeof (true && false)") as any).value, "boolean");
-  assertEquals((await run('typeof ("hello" + " world")') as any).value, "string");
+  assertEquals((await run("typeof (5 + 3)") as StringValue).value, "number");
+  assertEquals((await run("typeof (true && false)") as StringValue).value, "boolean");
+  assertEquals((await run('typeof ("hello" + " world")') as StringValue).value, "string");
 });
 
 Deno.test("Evaluator - Variable declaration and lookup", async () => {
@@ -180,7 +190,7 @@ Deno.test("Evaluator - Variable declaration and lookup", async () => {
     x = 5
     x
   `);
-  assertEquals((result as any).value, 5);
+  assertEquals((result as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Multiple variable declarations", async () => {
@@ -189,7 +199,7 @@ Deno.test("Evaluator - Multiple variable declarations", async () => {
     y = 10
     x + y
   `);
-  assertEquals((result as any).value, 15);
+  assertEquals((result as NumberValue).value, 15);
 });
 
 Deno.test("Evaluator - Variable with type annotation", async () => {
@@ -197,7 +207,7 @@ Deno.test("Evaluator - Variable with type annotation", async () => {
     count: int = 42
     count
   `);
-  assertEquals((result as any).value, 42);
+  assertEquals((result as NumberValue).value, 42);
 });
 
 Deno.test("Evaluator - Function declaration and call", async () => {
@@ -207,7 +217,7 @@ Deno.test("Evaluator - Function declaration and call", async () => {
     }
     add(2, 3)
   `);
-  assertEquals((result as any).value, 5);
+  assertEquals((result as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Function with no parameters", async () => {
@@ -217,7 +227,7 @@ Deno.test("Evaluator - Function with no parameters", async () => {
     }
     getAnswer()
   `);
-  assertEquals((result as any).value, 42);
+  assertEquals((result as NumberValue).value, 42);
 });
 
 Deno.test("Evaluator - Function with closure", async () => {
@@ -228,7 +238,7 @@ Deno.test("Evaluator - Function with closure", async () => {
     }
     addX(5)
   `);
-  assertEquals((result as any).value, 15);
+  assertEquals((result as NumberValue).value, 15);
 });
 
 Deno.test("Evaluator - Recursive function", async () => {
@@ -241,7 +251,7 @@ Deno.test("Evaluator - Recursive function", async () => {
     }
     factorial(5)
   `);
-  assertEquals((result as any).value, 120);
+  assertEquals((result as NumberValue).value, 120);
 });
 
 Deno.test("Evaluator - If statement - true condition", async () => {
@@ -255,7 +265,7 @@ Deno.test("Evaluator - If statement - true condition", async () => {
     }
     test()
   `);
-  assertEquals((result as any).value, 42);
+  assertEquals((result as NumberValue).value, 42);
 });
 
 Deno.test("Evaluator - If statement - false condition", async () => {
@@ -266,7 +276,7 @@ Deno.test("Evaluator - If statement - false condition", async () => {
     }
     x
   `);
-  assertEquals((result as any).value, 10);
+  assertEquals((result as NumberValue).value, 10);
 });
 
 Deno.test("Evaluator - If statement with comparison", async () => {
@@ -279,29 +289,29 @@ Deno.test("Evaluator - If statement with comparison", async () => {
     }
     absolute(-5)
   `);
-  assertEquals((result as any).value, 5);
+  assertEquals((result as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Array literal", async () => {
   const result = await run("[1, 2, 3]");
-  assertEquals((result as any).type, ValueType.ARRAY);
-  assertEquals((result as any).elements.length, 3);
-  assertEquals((result as any).elements[0].value, 1);
-  assertEquals((result as any).elements[1].value, 2);
-  assertEquals((result as any).elements[2].value, 3);
+  assertEquals(result.type, ValueType.ARRAY);
+  assertEquals((result as ArrayValue).elements.length, 3);
+  assertEquals(((result as ArrayValue).elements[0] as NumberValue).value, 1);
+  assertEquals(((result as ArrayValue).elements[1] as NumberValue).value, 2);
+  assertEquals(((result as ArrayValue).elements[2] as NumberValue).value, 3);
 });
 
 Deno.test("Evaluator - Empty array", async () => {
   const result = await run("[]");
-  assertEquals((result as any).type, ValueType.ARRAY);
-  assertEquals((result as any).elements.length, 0);
+  assertEquals(result.type, ValueType.ARRAY);
+  assertEquals((result as ArrayValue).elements.length, 0);
 });
 
 Deno.test("Evaluator - Array with expressions", async () => {
   const result = await run("[1 + 1, 2 * 3, 10 - 5]");
-  assertEquals((result as any).elements[0].value, 2);
-  assertEquals((result as any).elements[1].value, 6);
-  assertEquals((result as any).elements[2].value, 5);
+  assertEquals(((result as ArrayValue).elements[0] as NumberValue).value, 2);
+  assertEquals(((result as ArrayValue).elements[1] as NumberValue).value, 6);
+  assertEquals(((result as ArrayValue).elements[2] as NumberValue).value, 5);
 });
 
 Deno.test("Evaluator - Array indexing", async () => {
@@ -309,7 +319,7 @@ Deno.test("Evaluator - Array indexing", async () => {
     arr = [10, 20, 30]
     arr[1]
   `);
-  assertEquals((result as any).value, 20);
+  assertEquals((result as NumberValue).value, 20);
 });
 
 Deno.test("Evaluator - Array index out of bounds", async () => {
@@ -319,15 +329,15 @@ Deno.test("Evaluator - Array index out of bounds", async () => {
 
 Deno.test("Evaluator - Object literal", async () => {
   const result = await run('{name: "rahul", age: 21}');
-  assertEquals((result as any).type, ValueType.OBJECT);
-  assertEquals(((result as any).properties.get("name") as any).value, "rahul");
-  assertEquals(((result as any).properties.get("age") as any).value, 21);
+  assertEquals(result.type, ValueType.OBJECT);
+  assertEquals(((result as ObjectValue).properties.get("name") as StringValue).value, "rahul");
+  assertEquals(((result as ObjectValue).properties.get("age") as NumberValue).value, 21);
 });
 
 Deno.test("Evaluator - Empty object", async () => {
   const result = await run("{}");
-  assertEquals((result as any).type, ValueType.OBJECT);
-  assertEquals((result as any).properties.size, 0);
+  assertEquals(result.type, ValueType.OBJECT);
+  assertEquals((result as ObjectValue).properties.size, 0);
 });
 
 Deno.test("Evaluator - Object property access", async () => {
@@ -335,7 +345,7 @@ Deno.test("Evaluator - Object property access", async () => {
     user = {name: "rahul", age: 21}
     user.name
   `);
-  assertEquals((result as any).value, "rahul");
+  assertEquals((result as StringValue).value, "rahul");
 });
 
 Deno.test("Evaluator - Object with computed values", async () => {
@@ -344,7 +354,7 @@ Deno.test("Evaluator - Object with computed values", async () => {
     obj = {a: x + 1, b: x * 2}
     obj.a + obj.b
   `);
-  assertEquals((result as any).value, 16); // (5+1) + (5*2) = 6 + 10 = 16
+  assertEquals((result as NumberValue).value, 16); // (5+1) + (5*2) = 6 + 10 = 16
 });
 
 Deno.test("Evaluator - Return statement without value", async () => {
@@ -354,7 +364,7 @@ Deno.test("Evaluator - Return statement without value", async () => {
     }
     test()
   `);
-  assertEquals((result as any).type, ValueType.NULL);
+  assertEquals(result.type, ValueType.NULL);
 });
 
 Deno.test("Evaluator - Complex program", async () => {
@@ -369,12 +379,12 @@ Deno.test("Evaluator - Complex program", async () => {
     result = fibonacci(7)
     result
   `);
-  assertEquals((result as any).value, 13);
+  assertEquals((result as NumberValue).value, 13);
 });
 
 Deno.test("Evaluator - String concatenation with number", async () => {
   const result = await run('"hello" + 5');
-  assertEquals((result as any).value, "hello5");
+  assertEquals((result as StringValue).value, "hello5");
 });
 
 Deno.test("Evaluator - Type error - arithmetic on non-numbers", async () => {
@@ -396,44 +406,64 @@ Deno.test("Evaluator - Runtime error - wrong number of arguments", async () => {
 });
 
 Deno.test("Evaluator - Truthiness", async () => {
-  assertEquals((await run("fn test() { if (1) { return 1 } return 0 } test()") as any).value, 1);
-  assertEquals((await run("fn test() { if (0) { return 1 } return 0 } test()") as any).value, 0);
-  assertEquals((await run('fn test() { if ("") { return 1 } return 0 } test()') as any).value, 0);
   assertEquals(
-    (await run('fn test() { if ("hello") { return 1 } return 0 } test()') as any).value,
+    (await run("fn test() { if (1) { return 1 } return 0 } test()") as NumberValue).value,
     1,
   );
-  assertEquals((await run("fn test() { if (null) { return 1 } return 0 } test()") as any).value, 0);
+  assertEquals(
+    (await run("fn test() { if (0) { return 1 } return 0 } test()") as NumberValue).value,
+    0,
+  );
+  assertEquals(
+    (await run('fn test() { if ("") { return 1 } return 0 } test()') as NumberValue).value,
+    0,
+  );
+  assertEquals(
+    (await run('fn test() { if ("hello") { return 1 } return 0 } test()') as NumberValue).value,
+    1,
+  );
+  assertEquals(
+    (await run("fn test() { if (null) { return 1 } return 0 } test()") as NumberValue).value,
+    0,
+  );
 });
 
 Deno.test("Evaluator - Ternary expression - basic", async () => {
-  assertEquals((await run("5 > 3 ? 100 : 200") as any).value, 100);
-  assertEquals((await run("2 > 5 ? 100 : 200") as any).value, 200);
+  assertEquals((await run("5 > 3 ? 100 : 200") as NumberValue).value, 100);
+  assertEquals((await run("2 > 5 ? 100 : 200") as NumberValue).value, 200);
 });
 
 Deno.test("Evaluator - Ternary expression - with variables", async () => {
-  assertEquals((await run("x = 10\nx > 5 ? x * 2 : x / 2") as any).value, 20);
-  assertEquals((await run("x = 3\nx > 5 ? x * 2 : x / 2") as any).value, 1.5);
+  assertEquals((await run("x = 10\nx > 5 ? x * 2 : x / 2") as NumberValue).value, 20);
+  assertEquals((await run("x = 3\nx > 5 ? x * 2 : x / 2") as NumberValue).value, 1.5);
 });
 
 Deno.test("Evaluator - Ternary expression - nested", async () => {
-  assertEquals((await run("x = 15\nx > 10 ? 1 : x > 5 ? 2 : 3") as any).value, 1);
-  assertEquals((await run("x = 7\nx > 10 ? 1 : x > 5 ? 2 : 3") as any).value, 2);
-  assertEquals((await run("x = 3\nx > 10 ? 1 : x > 5 ? 2 : 3") as any).value, 3);
+  assertEquals((await run("x = 15\nx > 10 ? 1 : x > 5 ? 2 : 3") as NumberValue).value, 1);
+  assertEquals((await run("x = 7\nx > 10 ? 1 : x > 5 ? 2 : 3") as NumberValue).value, 2);
+  assertEquals((await run("x = 3\nx > 10 ? 1 : x > 5 ? 2 : 3") as NumberValue).value, 3);
 });
 
 Deno.test("Evaluator - Ternary expression - with strings", async () => {
-  assertEquals((await run('age = 18\nage >= 18 ? "adult" : "minor"') as any).value, "adult");
-  assertEquals((await run('age = 15\nage >= 18 ? "adult" : "minor"') as any).value, "minor");
+  assertEquals(
+    (await run('age = 18\nage >= 18 ? "adult" : "minor"') as StringValue).value,
+    "adult",
+  );
+  assertEquals(
+    (await run('age = 15\nage >= 18 ? "adult" : "minor"') as StringValue).value,
+    "minor",
+  );
 });
 
 Deno.test("Evaluator - Ternary expression - with function calls", async () => {
   assertEquals(
-    (await run("fn double(x) { return x * 2 }\ntrue ? double(5) : double(10)") as any).value,
+    (await run("fn double(x) { return x * 2 }\ntrue ? double(5) : double(10)") as NumberValue)
+      .value,
     10,
   );
   assertEquals(
-    (await run("fn double(x) { return x * 2 }\nfalse ? double(5) : double(10)") as any).value,
+    (await run("fn double(x) { return x * 2 }\nfalse ? double(5) : double(10)") as NumberValue)
+      .value,
     20,
   );
 });
@@ -444,5 +474,5 @@ Deno.test("Evaluator - Ternary expression - short-circuit evaluation", async () 
     fn safe() { return 42 }
     true ? safe() : error()
   `);
-  assertEquals((result as any).value, 42);
+  assertEquals((result as NumberValue).value, 42);
 });

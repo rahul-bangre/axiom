@@ -1,7 +1,16 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 
 async function run(source: string): Promise<RuntimeValue> {
   const tokenizer = new Tokenizer(source);
@@ -40,7 +49,7 @@ Deno.test("HTTP - http.fetch returns async result object", async () => {
   `);
 
   assertEquals(result.type, ValueType.OBJECT);
-  const obj = result as any;
+  const obj = result as ObjectValue;
   assertEquals(obj.properties.has("ok"), true);
   assertEquals(obj.properties.has("value"), true);
 });
@@ -55,7 +64,7 @@ Deno.test("HTTP - http.fetch success has response with status", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  const status = (result as any).value;
+  const status = (result as NumberValue).value;
   assertEquals(status, 200);
 });
 
@@ -69,7 +78,7 @@ Deno.test("HTTP - http.fetch response has body", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "string");
+  assertEquals((result as StringValue).value, "string");
 });
 
 Deno.test("HTTP - http.fetch response has headers", async () => {
@@ -82,7 +91,7 @@ Deno.test("HTTP - http.fetch response has headers", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "object");
+  assertEquals((result as StringValue).value, "object");
 });
 
 Deno.test("HTTP - response.json() returns parsed object", async () => {
@@ -104,7 +113,7 @@ Deno.test("HTTP - response.json() returns parsed object", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "Leanne Graham");
+  assertEquals((result as StringValue).value, "Leanne Graham");
 });
 
 Deno.test("HTTP - http.fetch POST with body", async () => {
@@ -122,7 +131,7 @@ Deno.test("HTTP - http.fetch POST with body", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 201);
+  assertEquals((result as NumberValue).value, 201);
 });
 
 Deno.test("HTTP - http.fetch PUT updates resource", async () => {
@@ -140,7 +149,7 @@ Deno.test("HTTP - http.fetch PUT updates resource", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 200);
+  assertEquals((result as NumberValue).value, 200);
 });
 
 Deno.test("HTTP - http.fetch DELETE removes resource", async () => {
@@ -156,7 +165,7 @@ Deno.test("HTTP - http.fetch DELETE removes resource", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 200);
+  assertEquals((result as NumberValue).value, 200);
 });
 
 Deno.test("HTTP - http.fetch PATCH updates resource partially", async () => {
@@ -174,7 +183,7 @@ Deno.test("HTTP - http.fetch PATCH updates resource partially", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 200);
+  assertEquals((result as NumberValue).value, 200);
 });
 
 Deno.test("HTTP - 404 response is success with 404 status", async () => {
@@ -188,7 +197,7 @@ Deno.test("HTTP - 404 response is success with 404 status", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 404);
+  assertEquals((result as NumberValue).value, 404);
 });
 
 Deno.test("HTTP - invalid URL returns error result", async () => {
@@ -198,7 +207,7 @@ Deno.test("HTTP - invalid URL returns error result", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, false);
+  assertEquals((result as BooleanValue).value, false);
 });
 
 Deno.test("HTTP - http.fetch requires string URL", async () => {
@@ -258,14 +267,14 @@ Deno.test("HTTP - can access nested JSON properties", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "Gwenborough");
+  assertEquals((result as StringValue).value, "Gwenborough");
 });
 
 Deno.test("HTTP - http object exists in global scope", async () => {
   const result = await run(`typeof(http)`);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "object");
+  assertEquals((result as StringValue).value, "object");
 });
 
 Deno.test("HTTP - http has all methods", async () => {
@@ -282,5 +291,5 @@ Deno.test("HTTP - http has all methods", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });

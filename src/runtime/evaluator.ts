@@ -10,12 +10,14 @@ import {
   AsyncValue,
   BooleanValue,
   FunctionValue,
+  isReturnSignal,
   makeAsyncValue,
   NativeFunctionValue,
   NullValue,
   NumberValue,
   ObjectValue,
   QueryBuilderValue,
+  type ReturnSignal,
   RuntimeValue,
   StringValue,
   ValueType,
@@ -142,7 +144,7 @@ async function evaluateBlockStatement(
 
     result = stmt_result.value;
 
-    if (result.type === ValueType.NULL && (result as any).isReturn) {
+    if (result.type === ValueType.NULL && isReturnSignal(result)) {
       return ok(result);
     }
   }
@@ -354,7 +356,7 @@ function isTruthy(value: RuntimeValue): boolean {
 async function callFunction(
   callee: RuntimeValue,
   args: RuntimeValue[],
-  env: Environment,
+  _env: Environment,
   module_loader?: ModuleLoader,
 ): Promise<Result<RuntimeValue>> {
   if (callee.type !== ValueType.FUNCTION && callee.type !== ValueType.NATIVE_FUNCTION) {
@@ -400,8 +402,8 @@ async function callFunction(
   const result = await evaluateBlockStatement(func.body, func_env, module_loader);
   if (!result.ok) return result;
 
-  if ((result.value as any).isReturn) {
-    const return_val = (result.value as any).returnValue || { type: ValueType.NULL };
+  if (isReturnSignal(result.value)) {
+    const return_val = result.value.returnValue || { type: ValueType.NULL };
 
     const has_typed_params = func.param_info.some((p) => p.type_annotation !== undefined);
     const inferred_return_type = func.return_type || (has_typed_params ? "void" : undefined);
@@ -809,11 +811,12 @@ async function evaluateReturnStatement(
     return_val = value_result.value;
   }
 
-  return ok({
+  const signal: ReturnSignal = {
     type: ValueType.NULL,
     isReturn: true,
     returnValue: return_val,
-  } as any);
+  };
+  return ok(signal);
 }
 
 async function evaluateAwaitExpr(

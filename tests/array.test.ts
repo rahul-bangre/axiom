@@ -1,8 +1,4 @@
-import {
-  assertEquals,
-  assertRejects,
-  assertThrows,
-} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals, assertRejects } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
 import { createGlobalEnv, evaluate, ValueType } from "@runtime";

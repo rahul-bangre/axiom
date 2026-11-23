@@ -8,8 +8,8 @@ import type {
   RuntimeValue,
   StringValue,
 } from "../runtime/value.ts";
-import { ValueType } from "../runtime/value.ts";
-import { HAMT } from "./hamt.ts";
+import { syncCall, ValueType } from "../runtime/value.ts";
+import { HAMT, hamtHandle } from "./hamt.ts";
 
 class AxiomMap {
   constructor(private readonly hamt: HAMT) {}
@@ -63,82 +63,82 @@ class AxiomMap {
     const set_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "set",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 2) {
           return runtimeError("Map.set() expects exactly 2 arguments (key, value)");
         }
         return ok(this.set(args[0], args[1]).toRuntimeValue());
-      },
+      }),
     };
 
     const get_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "get",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Map.get() expects exactly 1 argument");
         }
         const value = this.get(args[0]);
         return ok(value || { type: ValueType.NULL });
-      },
+      }),
     };
 
     const delete_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "delete",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Map.delete() expects exactly 1 argument");
         }
         return ok(this.delete(args[0]).toRuntimeValue());
-      },
+      }),
     };
 
     const has_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "has",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Map.has() expects exactly 1 argument");
         }
         return ok({ type: ValueType.BOOLEAN, value: this.has(args[0]) } as BooleanValue);
-      },
+      }),
     };
 
     const size_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "size",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         return ok({ type: ValueType.NUMBER, value: this.size() } as NumberValue);
-      },
+      }),
     };
 
     const keys_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "keys",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         return ok({
           type: ValueType.ARRAY,
           elements: this.keys(),
         } as ArrayValue);
-      },
+      }),
     };
 
     const values_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "values",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         return ok({
           type: ValueType.ARRAY,
           elements: this.values(),
         } as ArrayValue);
-      },
+      }),
     };
 
     const entries_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "entries",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         const entries_array = this.entries().map(([key, value]) => ({
           type: ValueType.ARRAY,
           elements: [key, value],
@@ -148,7 +148,7 @@ class AxiomMap {
           type: ValueType.ARRAY,
           elements: entries_array,
         } as ArrayValue);
-      },
+      }),
     };
 
     const properties = new Map<string, RuntimeValue>();
@@ -160,7 +160,7 @@ class AxiomMap {
     properties.set("keys", keys_method);
     properties.set("values", values_method);
     properties.set("entries", entries_method);
-    properties.set("__hamt__", { hamt: this.hamt } as any);
+    properties.set("__hamt__", hamtHandle(this.hamt));
 
     return {
       type: ValueType.OBJECT,
@@ -172,7 +172,7 @@ class AxiomMap {
 export const map_constructor: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "Map",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length === 0) {
       return ok(AxiomMap.empty().toRuntimeValue());
     }
@@ -187,5 +187,5 @@ export const map_constructor: NativeFunctionValue = {
     }
 
     return ok(AxiomMap.fromObject(arg as ObjectValue).toRuntimeValue());
-  },
+  }),
 };

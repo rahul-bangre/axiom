@@ -2,6 +2,7 @@ import { ok, Result, runtimeError, typeError } from "../types/result.ts";
 import {
   ArrayValue,
   FunctionValue,
+  isReturnSignal,
   NativeFunctionValue,
   NullValue,
   NumberValue,
@@ -126,8 +127,8 @@ async function executeMiddlewareChain(
 
     let return_value = result.value;
 
-    if ((return_value as any).isReturn) {
-      return_value = (return_value as any).returnValue || return_value;
+    if (isReturnSignal(return_value)) {
+      return_value = return_value.returnValue || return_value;
     }
 
     if (return_value.type === ValueType.OBJECT) {
@@ -501,8 +502,8 @@ export const http_server: NativeFunctionValue = {
 
         let response = result.value;
 
-        if ((response as any).isReturn) {
-          response = (response as any).returnValue || response;
+        if (isReturnSignal(response)) {
+          response = response.returnValue || response;
         }
 
         if (response.type !== ValueType.OBJECT) {

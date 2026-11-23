@@ -1,7 +1,16 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue } from "@runtime";
+import {
+  ArrayValue,
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function run(source_code: string): Promise<Result<RuntimeValue>> {
@@ -16,19 +25,19 @@ async function run(source_code: string): Promise<Result<RuntimeValue>> {
 Deno.test("Type checker - Variable with correct int type", async () => {
   const eval_result = await run("x: int = 42");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Variable with correct string type", async () => {
   const eval_result = await run('name: string = "axiom"');
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, "axiom");
+  if (eval_result.ok) assertEquals((eval_result.value as StringValue).value, "axiom");
 });
 
 Deno.test("Type checker - Variable with correct bool type", async () => {
   const eval_result = await run("flag: bool = true");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, true);
+  if (eval_result.ok) assertEquals((eval_result.value as BooleanValue).value, true);
 });
 
 Deno.test("Type checker - Variable type mismatch - int", async () => {
@@ -60,13 +69,13 @@ Deno.test("Type checker - Variable type mismatch - bool", async () => {
 Deno.test("Type checker - Float accepts int", async () => {
   const eval_result = await run("x: float = 42");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Float accepts float", async () => {
   const eval_result = await run("x: float = 3.14");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 3.14);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 3.14);
 });
 
 Deno.test("Type checker - Function return type correct", async () => {
@@ -77,7 +86,7 @@ Deno.test("Type checker - Function return type correct", async () => {
     getNumber()
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Function return type mismatch", async () => {
@@ -102,7 +111,7 @@ Deno.test("Type checker - Function parameter type correct", async () => {
     double(21)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Function parameter type mismatch", async () => {
@@ -127,7 +136,7 @@ Deno.test("Type checker - Multiple parameters with types", async () => {
     add(10, 32)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Multiple parameters type mismatch", async () => {
@@ -147,14 +156,17 @@ Deno.test("Type checker - Multiple parameters type mismatch", async () => {
 Deno.test("Type checker - Array type", async () => {
   const eval_result = await run("arr: array = [1, 2, 3]");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).elements.length, 3);
+  if (eval_result.ok) assertEquals((eval_result.value as ArrayValue).elements.length, 3);
 });
 
 Deno.test("Type checker - Object type", async () => {
   const eval_result = await run('user: object = {name: "rahul"}');
   assertEquals(eval_result.ok, true);
   if (eval_result.ok) {
-    assertEquals((eval_result.value as any).properties.get("name").value, "rahul");
+    assertEquals(
+      ((eval_result.value as ObjectValue).properties.get("name") as StringValue).value,
+      "rahul",
+    );
   }
 });
 
@@ -166,7 +178,7 @@ Deno.test("Type checker - Without type annotation works", async () => {
     x + 10
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 52);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 52);
 });
 
 Deno.test("Type checker - Mixed typed and untyped", async () => {
@@ -176,13 +188,13 @@ Deno.test("Type checker - Mixed typed and untyped", async () => {
     x + y
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Null value without type", async () => {
   const eval_result = await run("x = null");
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).type, 3);
+  if (eval_result.ok) assertEquals((eval_result.value as RuntimeValue).type, 3);
 });
 
 Deno.test("Type checker - Function type", async () => {
@@ -194,7 +206,7 @@ Deno.test("Type checker - Function type", async () => {
     f()
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Void return inferred for typed params", async () => {
@@ -218,7 +230,7 @@ Deno.test("Type checker - Void return with no return statement OK", async () => 
     test(5)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).type, 3);
+  if (eval_result.ok) assertEquals((eval_result.value as RuntimeValue).type, 3);
 });
 
 Deno.test("Type checker - Void return with explicit return (no value) OK", async () => {
@@ -232,7 +244,7 @@ Deno.test("Type checker - Void return with explicit return (no value) OK", async
     test(5)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).type, 3);
+  if (eval_result.ok) assertEquals((eval_result.value as RuntimeValue).type, 3);
 });
 
 Deno.test("Type checker - Untyped params can return without annotation", async () => {
@@ -243,7 +255,7 @@ Deno.test("Type checker - Untyped params can return without annotation", async (
     test(10)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 15);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 15);
 });
 
 Deno.test("Type checker - Explicit return type overrides void", async () => {
@@ -254,7 +266,7 @@ Deno.test("Type checker - Explicit return type overrides void", async () => {
     test(21)
   `);
   assertEquals(eval_result.ok, true);
-  if (eval_result.ok) assertEquals((eval_result.value as any).value, 42);
+  if (eval_result.ok) assertEquals((eval_result.value as NumberValue).value, 42);
 });
 
 Deno.test("Type checker - Explicit void return type", async () => {

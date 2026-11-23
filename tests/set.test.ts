@@ -1,7 +1,15 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 
 async function run(source: string): Promise<RuntimeValue> {
   const tokenizer = new Tokenizer(source);
@@ -40,7 +48,7 @@ Deno.test("Set - create empty set", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "object");
+  assertEquals((result as StringValue).value, "object");
 });
 
 Deno.test("Set - create from array", async () => {
@@ -50,7 +58,7 @@ Deno.test("Set - create from array", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Set - add removes duplicates", async () => {
@@ -61,7 +69,7 @@ Deno.test("Set - add removes duplicates", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Set - add new element", async () => {
@@ -72,7 +80,7 @@ Deno.test("Set - add new element", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 4);
+  assertEquals((result as NumberValue).value, 4);
 });
 
 Deno.test("Set - original unchanged after add", async () => {
@@ -83,7 +91,7 @@ Deno.test("Set - original unchanged after add", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Set - has returns true for existing element", async () => {
@@ -93,7 +101,7 @@ Deno.test("Set - has returns true for existing element", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Set - has returns false for missing element", async () => {
@@ -103,7 +111,7 @@ Deno.test("Set - has returns false for missing element", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, false);
+  assertEquals((result as BooleanValue).value, false);
 });
 
 Deno.test("Set - delete removes element", async () => {
@@ -114,7 +122,7 @@ Deno.test("Set - delete removes element", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, false);
+  assertEquals((result as BooleanValue).value, false);
 });
 
 Deno.test("Set - delete updates size", async () => {
@@ -125,7 +133,7 @@ Deno.test("Set - delete updates size", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Set - original unchanged after delete", async () => {
@@ -136,7 +144,7 @@ Deno.test("Set - original unchanged after delete", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Set - union combines sets", async () => {
@@ -148,7 +156,7 @@ Deno.test("Set - union combines sets", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 5);
+  assertEquals((result as NumberValue).value, 5);
 });
 
 Deno.test("Set - intersection finds common elements", async () => {
@@ -160,7 +168,7 @@ Deno.test("Set - intersection finds common elements", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Set - intersection has correct elements", async () => {
@@ -175,7 +183,7 @@ Deno.test("Set - intersection has correct elements", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Set - difference removes elements", async () => {
@@ -187,7 +195,7 @@ Deno.test("Set - difference removes elements", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 1);
+  assertEquals((result as NumberValue).value, 1);
 });
 
 Deno.test("Set - difference has correct element", async () => {
@@ -199,7 +207,7 @@ Deno.test("Set - difference has correct element", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Set - works with strings", async () => {
@@ -209,7 +217,7 @@ Deno.test("Set - works with strings", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Set - works with mixed types", async () => {
@@ -223,7 +231,7 @@ Deno.test("Set - works with mixed types", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Set - toArray returns array", async () => {
@@ -234,7 +242,7 @@ Deno.test("Set - toArray returns array", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Set - chaining operations", async () => {
@@ -245,7 +253,7 @@ Deno.test("Set - chaining operations", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 4);
+  assertEquals((result as NumberValue).value, 4);
 });
 
 Deno.test("Set - empty set size is 0", async () => {
@@ -255,7 +263,7 @@ Deno.test("Set - empty set size is 0", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 0);
+  assertEquals((result as NumberValue).value, 0);
 });
 
 Deno.test("Set - add() requires exactly 1 argument", async () => {
@@ -311,5 +319,5 @@ Deno.test("Set - large set performance", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 100);
+  assertEquals((result as NumberValue).value, 100);
 });

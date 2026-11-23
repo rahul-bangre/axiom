@@ -1,4 +1,4 @@
-import { RuntimeValue, ValueType } from "@runtime";
+import { type NumberValue, RuntimeValue, ValueType } from "@runtime";
 import { ok, Result, typeError } from "./result.ts";
 import { AxiomType, parseType, typeToString } from "./types.ts";
 
@@ -6,7 +6,7 @@ import { AxiomType, parseType, typeToString } from "./types.ts";
 export function inferType(value: RuntimeValue): AxiomType {
   switch (value.type) {
     case ValueType.NUMBER: {
-      const num = (value as any).value;
+      const num = (value as NumberValue).value;
       return Number.isInteger(num) ? AxiomType.INT : AxiomType.FLOAT;
     }
     case ValueType.STRING:

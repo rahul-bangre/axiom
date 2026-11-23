@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate } from "@runtime";
+import { createGlobalEnv, evaluate, NumberValue, RuntimeValue } from "@runtime";
 import { ModuleLoader } from "../src/runtime/module-loader.ts";
 import { ValueType } from "@runtime";
 
@@ -26,57 +26,57 @@ Deno.test("Math - abs with positive number", async () => {
   const code = `result = abs(5)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).type, ValueType.NUMBER);
-  assertEquals((result.value as any).value, 5);
+  assertEquals((result.value as RuntimeValue).type, ValueType.NUMBER);
+  assertEquals((result.value as NumberValue).value, 5);
 });
 
 Deno.test("Math - abs with negative number", async () => {
   const code = `result = abs(-5)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 5);
+  assertEquals((result.value as NumberValue).value, 5);
 });
 
 Deno.test("Math - abs with zero", async () => {
   const code = `result = abs(0)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 0);
+  assertEquals((result.value as NumberValue).value, 0);
 });
 
 Deno.test("Math - min with two numbers", async () => {
   const code = `result = min(5, 3)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 3);
+  assertEquals((result.value as NumberValue).value, 3);
 });
 
 Deno.test("Math - min with multiple numbers", async () => {
   const code = `result = min(5, 3, 8, 1, 9)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 1);
+  assertEquals((result.value as NumberValue).value, 1);
 });
 
 Deno.test("Math - min with negative numbers", async () => {
   const code = `result = min(-5, -3, -8)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, -8);
+  assertEquals((result.value as NumberValue).value, -8);
 });
 
 Deno.test("Math - max with two numbers", async () => {
   const code = `result = max(5, 3)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 5);
+  assertEquals((result.value as NumberValue).value, 5);
 });
 
 Deno.test("Math - max with multiple numbers", async () => {
   const code = `result = max(5, 3, 8, 1, 9)`;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 9);
+  assertEquals((result.value as NumberValue).value, 9);
 });
 
 Deno.test("Math - can import std:math module", async () => {
@@ -92,8 +92,8 @@ Deno.test("Math - math.pi constant", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).type, ValueType.NUMBER);
-  assertEquals(Math.abs((result.value as any).value - Math.PI) < 0.000001, true);
+  assertEquals((result.value as RuntimeValue).type, ValueType.NUMBER);
+  assertEquals(Math.abs((result.value as NumberValue).value - Math.PI) < 0.000001, true);
 });
 
 Deno.test("Math - math.e constant", async () => {
@@ -103,7 +103,7 @@ Deno.test("Math - math.e constant", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals(Math.abs((result.value as any).value - Math.E) < 0.000001, true);
+  assertEquals(Math.abs((result.value as NumberValue).value - Math.E) < 0.000001, true);
 });
 
 Deno.test("Math - math.infty constant", async () => {
@@ -113,7 +113,7 @@ Deno.test("Math - math.infty constant", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, Infinity);
+  assertEquals((result.value as NumberValue).value, Infinity);
 });
 
 Deno.test("Math - clamp within range", async () => {
@@ -123,7 +123,7 @@ Deno.test("Math - clamp within range", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 5);
+  assertEquals((result.value as NumberValue).value, 5);
 });
 
 Deno.test("Math - clamp below min", async () => {
@@ -133,7 +133,7 @@ Deno.test("Math - clamp below min", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 0);
+  assertEquals((result.value as NumberValue).value, 0);
 });
 
 Deno.test("Math - clamp above max", async () => {
@@ -143,7 +143,7 @@ Deno.test("Math - clamp above max", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 10);
+  assertEquals((result.value as NumberValue).value, 10);
 });
 
 Deno.test("Math - sqrt of positive number", async () => {
@@ -153,7 +153,7 @@ Deno.test("Math - sqrt of positive number", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 4);
+  assertEquals((result.value as NumberValue).value, 4);
 });
 
 Deno.test("Math - sqrt of zero", async () => {
@@ -163,7 +163,7 @@ Deno.test("Math - sqrt of zero", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 0);
+  assertEquals((result.value as NumberValue).value, 0);
 });
 
 Deno.test("Math - sqrt of negative number returns error", async () => {
@@ -183,7 +183,7 @@ Deno.test("Math - pow basic", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 8);
+  assertEquals((result.value as NumberValue).value, 8);
 });
 
 Deno.test("Math - pow with fractional exponent", async () => {
@@ -193,7 +193,7 @@ Deno.test("Math - pow with fractional exponent", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 4);
+  assertEquals((result.value as NumberValue).value, 4);
 });
 
 Deno.test("Math - exp", async () => {
@@ -203,7 +203,7 @@ Deno.test("Math - exp", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals(Math.abs((result.value as any).value - Math.E) < 0.000001, true);
+  assertEquals(Math.abs((result.value as NumberValue).value - Math.E) < 0.000001, true);
 });
 
 Deno.test("Math - log natural (base e)", async () => {
@@ -213,7 +213,7 @@ Deno.test("Math - log natural (base e)", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals(Math.abs((result.value as any).value - 1) < 0.000001, true);
+  assertEquals(Math.abs((result.value as NumberValue).value - 1) < 0.000001, true);
 });
 
 Deno.test("Math - log with custom base", async () => {
@@ -223,7 +223,7 @@ Deno.test("Math - log with custom base", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals(Math.abs((result.value as any).value - 2) < 0.000001, true);
+  assertEquals(Math.abs((result.value as NumberValue).value - 2) < 0.000001, true);
 });
 
 Deno.test("Math - log of negative returns error", async () => {
@@ -243,7 +243,7 @@ Deno.test("Math - sign of positive number", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 1);
+  assertEquals((result.value as NumberValue).value, 1);
 });
 
 Deno.test("Math - sign of negative number", async () => {
@@ -253,7 +253,7 @@ Deno.test("Math - sign of negative number", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, -1);
+  assertEquals((result.value as NumberValue).value, -1);
 });
 
 Deno.test("Math - sign of zero", async () => {
@@ -263,7 +263,7 @@ Deno.test("Math - sign of zero", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 0);
+  assertEquals((result.value as NumberValue).value, 0);
 });
 
 Deno.test("Math - round halfway up", async () => {
@@ -273,7 +273,7 @@ Deno.test("Math - round halfway up", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 4);
+  assertEquals((result.value as NumberValue).value, 4);
 });
 
 Deno.test("Math - round halfway down", async () => {
@@ -283,7 +283,7 @@ Deno.test("Math - round halfway down", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 3);
+  assertEquals((result.value as NumberValue).value, 3);
 });
 
 Deno.test("Math - floor", async () => {
@@ -293,7 +293,7 @@ Deno.test("Math - floor", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 3);
+  assertEquals((result.value as NumberValue).value, 3);
 });
 
 Deno.test("Math - floor negative", async () => {
@@ -303,7 +303,7 @@ Deno.test("Math - floor negative", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, -4);
+  assertEquals((result.value as NumberValue).value, -4);
 });
 
 Deno.test("Math - ceil", async () => {
@@ -313,7 +313,7 @@ Deno.test("Math - ceil", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 4);
+  assertEquals((result.value as NumberValue).value, 4);
 });
 
 Deno.test("Math - ceil negative", async () => {
@@ -323,7 +323,7 @@ Deno.test("Math - ceil negative", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, -3);
+  assertEquals((result.value as NumberValue).value, -3);
 });
 
 Deno.test("Math - trunc positive", async () => {
@@ -333,7 +333,7 @@ Deno.test("Math - trunc positive", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 3);
+  assertEquals((result.value as NumberValue).value, 3);
 });
 
 Deno.test("Math - trunc negative", async () => {
@@ -343,7 +343,7 @@ Deno.test("Math - trunc negative", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, -3);
+  assertEquals((result.value as NumberValue).value, -3);
 });
 
 Deno.test("Math - random returns number in range", async () => {
@@ -353,8 +353,8 @@ Deno.test("Math - random returns number in range", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).type, ValueType.NUMBER);
-  const value = (result.value as any).value;
+  assertEquals((result.value as RuntimeValue).type, ValueType.NUMBER);
+  const value = (result.value as NumberValue).value;
   assertEquals(value >= 0 && value < 1, true);
 });
 
@@ -367,7 +367,7 @@ Deno.test("Math - combining operations", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 79);
+  assertEquals((result.value as NumberValue).value, 79);
 });
 
 Deno.test("Math - abs requires number", async () => {

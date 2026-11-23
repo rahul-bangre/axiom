@@ -5,6 +5,7 @@ import { createGlobalEnv, evaluate } from "../src/runtime/mod.ts";
 import { ModuleLoader } from "../src/runtime/module-loader.ts";
 import { RuntimeValue } from "../src/runtime/value.ts";
 import { Result } from "../src/types/result.ts";
+import type { NumberValue } from "@runtime";
 
 async function run(code: string, file_path: string): Promise<RuntimeValue> {
   const tokenizer = new Tokenizer(code);
@@ -34,7 +35,7 @@ Deno.test("Module - use with alias", async () => {
     result = math.add(5, 3)
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals((result as any).value, 8);
+  assertEquals((result as NumberValue).value, 8);
 });
 
 Deno.test("Module - use with exposing", async () => {
@@ -45,7 +46,7 @@ Deno.test("Module - use with exposing", async () => {
     result = add(sum, product)
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals((result as any).value, 50);
+  assertEquals((result as NumberValue).value, 50);
 });
 
 Deno.test("Module - export const", async () => {
@@ -54,7 +55,7 @@ Deno.test("Module - export const", async () => {
     result = math.PI
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals((result as any).value, 3.14159);
+  assertEquals((result as NumberValue).value, 3.14159);
 });
 
 Deno.test("Module - nested imports", async () => {
@@ -63,7 +64,7 @@ Deno.test("Module - nested imports", async () => {
     result = calculate_sum(1, 2, 3)
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals((result as any).value, 6);
+  assertEquals((result as NumberValue).value, 6);
 });
 
 Deno.test("Module - multiple imports", async () => {
@@ -75,7 +76,7 @@ Deno.test("Module - multiple imports", async () => {
     number = add(5, 10)
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals((result as any).value, 15);
+  assertEquals((result as NumberValue).value, 15);
 });
 
 Deno.test("Module - module not found", async () => {
@@ -109,7 +110,7 @@ Deno.test("Module - caching works (same module loaded twice)", async () => {
     result = math1.add(math2.PI, 1)
   `;
   const result = await run(code, `${Deno.cwd()}/tests/modules/main.ax`);
-  assertEquals(Math.floor((result as any).value), 4);
+  assertEquals(Math.floor((result as NumberValue).value), 4);
 });
 
 Deno.test("Module - circular dependency detected", async () => {

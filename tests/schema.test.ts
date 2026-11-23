@@ -1,7 +1,16 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue } from "@runtime";
+import {
+  ArrayValue,
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function run(source_code: string): Promise<Result<RuntimeValue>> {
@@ -19,7 +28,7 @@ Deno.test("Schema - string validation passes", async () => {
     s.parse("hello")
   `);
   assertEquals(result.ok, true);
-  if (result.ok) assertEquals((result.value as any).value, "hello");
+  if (result.ok) assertEquals((result.value as StringValue).value, "hello");
 });
 
 Deno.test("Schema - string validation fails on number", async () => {
@@ -71,7 +80,7 @@ Deno.test("Schema - number validation passes", async () => {
     s.parse(42)
   `);
   assertEquals(result.ok, true);
-  if (result.ok) assertEquals((result.value as any).value, 42);
+  if (result.ok) assertEquals((result.value as NumberValue).value, 42);
 });
 
 Deno.test("Schema - number validation fails on string", async () => {
@@ -123,7 +132,7 @@ Deno.test("Schema - boolean validation passes", async () => {
     s.parse(true)
   `);
   assertEquals(result.ok, true);
-  if (result.ok) assertEquals((result.value as any).value, true);
+  if (result.ok) assertEquals((result.value as BooleanValue).value, true);
 });
 
 Deno.test("Schema - boolean validation fails", async () => {
@@ -182,7 +191,7 @@ Deno.test("Schema - array validation passes", async () => {
     s.parse([1, 2, 3])
   `);
   assertEquals(result.ok, true);
-  if (result.ok) assertEquals((result.value as any).elements.length, 3);
+  if (result.ok) assertEquals((result.value as ArrayValue).elements.length, 3);
 });
 
 Deno.test("Schema - array element validation fails", async () => {
@@ -397,7 +406,7 @@ Deno.test("Schema - array of objects", async () => {
     len(validated)
   `);
   assertEquals(result.ok, true);
-  if (result.ok) assertEquals((result.value as any).value, 2);
+  if (result.ok) assertEquals((result.value as NumberValue).value, 2);
 });
 
 Deno.test("Schema - method chaining", async () => {
@@ -442,9 +451,9 @@ Deno.test("Schema - extend basic object", async () => {
   `);
   assertEquals(result.ok, true);
   if (result.ok) {
-    const obj = result.value as any;
-    assertEquals(obj.properties.get("name").value, "Alice");
-    assertEquals(obj.properties.get("role").value, "admin");
+    const obj = result.value as ObjectValue;
+    assertEquals((obj.properties.get("name") as StringValue).value, "Alice");
+    assertEquals((obj.properties.get("role") as StringValue).value, "admin");
   }
 });
 
@@ -552,7 +561,7 @@ Deno.test("Schema - extend can override parent field", async () => {
   `);
   assertEquals(result.ok, true);
   if (result.ok) {
-    const obj_val = result.value as any;
-    assertEquals(obj_val.properties.get("value").value, 42);
+    const obj_val = result.value as ObjectValue;
+    assertEquals((obj_val.properties.get("value") as NumberValue).value, 42);
   }
 });

@@ -7,8 +7,8 @@ import type {
   ObjectValue,
   RuntimeValue,
 } from "../runtime/value.ts";
-import { ValueType } from "../runtime/value.ts";
-import { HAMT } from "./hamt.ts";
+import { syncCall, ValueType } from "../runtime/value.ts";
+import { HAMT, hamtFromHandle, hamtHandle } from "./hamt.ts";
 
 const DUMMY_VALUE: RuntimeValue = { type: ValueType.NULL };
 
@@ -77,48 +77,48 @@ class AxiomSet {
     const add_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "add",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.add() expects exactly 1 argument");
         }
         return ok(this.add(args[0]).toRuntimeValue());
-      },
+      }),
     };
 
     const delete_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "delete",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.delete() expects exactly 1 argument");
         }
         return ok(this.delete(args[0]).toRuntimeValue());
-      },
+      }),
     };
 
     const has_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "has",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.has() expects exactly 1 argument");
         }
         return ok({ type: ValueType.BOOLEAN, value: this.has(args[0]) } as BooleanValue);
-      },
+      }),
     };
 
     const size_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "size",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         return ok({ type: ValueType.NUMBER, value: this.size() } as NumberValue);
-      },
+      }),
     };
 
     const union_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "union",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.union() expects exactly 1 argument");
         }
@@ -130,15 +130,15 @@ class AxiomSet {
         if (!other_hamt_prop) {
           return typeError("Set.union() requires a Set argument");
         }
-        const other_set = new AxiomSet((other_hamt_prop as any).hamt);
+        const other_set = new AxiomSet(hamtFromHandle(other_hamt_prop));
         return ok(this.union(other_set).toRuntimeValue());
-      },
+      }),
     };
 
     const intersection_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "intersection",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.intersection() expects exactly 1 argument");
         }
@@ -150,15 +150,15 @@ class AxiomSet {
         if (!other_hamt_prop) {
           return typeError("Set.intersection() requires a Set argument");
         }
-        const other_set = new AxiomSet((other_hamt_prop as any).hamt);
+        const other_set = new AxiomSet(hamtFromHandle(other_hamt_prop));
         return ok(this.intersection(other_set).toRuntimeValue());
-      },
+      }),
     };
 
     const difference_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "difference",
-      call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+      call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
         if (args.length !== 1) {
           return runtimeError("Set.difference() expects exactly 1 argument");
         }
@@ -170,20 +170,20 @@ class AxiomSet {
         if (!other_hamt_prop) {
           return typeError("Set.difference() requires a Set argument");
         }
-        const other_set = new AxiomSet((other_hamt_prop as any).hamt);
+        const other_set = new AxiomSet(hamtFromHandle(other_hamt_prop));
         return ok(this.difference(other_set).toRuntimeValue());
-      },
+      }),
     };
 
     const to_array_method: NativeFunctionValue = {
       type: ValueType.NATIVE_FUNCTION,
       name: "toArray",
-      call: async (): Promise<Result<RuntimeValue>> => {
+      call: syncCall((): Result<RuntimeValue> => {
         return ok({
           type: ValueType.ARRAY,
           elements: this.toArray(),
         } as ArrayValue);
-      },
+      }),
     };
 
     const properties = new Map<string, RuntimeValue>();
@@ -195,7 +195,7 @@ class AxiomSet {
     properties.set("intersection", intersection_method);
     properties.set("difference", difference_method);
     properties.set("toArray", to_array_method);
-    properties.set("__hamt__", { hamt: this.hamt } as any);
+    properties.set("__hamt__", hamtHandle(this.hamt));
 
     return {
       type: ValueType.OBJECT,
@@ -207,7 +207,7 @@ class AxiomSet {
 export const set_constructor: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "Set",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length === 0) {
       return ok(AxiomSet.empty().toRuntimeValue());
     }
@@ -223,5 +223,5 @@ export const set_constructor: NativeFunctionValue = {
 
     const array = arg as ArrayValue;
     return ok(AxiomSet.fromArray(array.elements).toRuntimeValue());
-  },
+  }),
 };

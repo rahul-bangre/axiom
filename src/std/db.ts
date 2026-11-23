@@ -11,12 +11,14 @@ import {
   ObjectValue,
   QueryBuilderValue,
   RuntimeValue,
+  type SqlValue,
   StringValue,
+  syncCall,
   TransactionValue,
   ValueType,
 } from "../runtime/value.ts";
 
-function runtimeValueToJs(value: RuntimeValue): any {
+function runtimeValueToJs(value: RuntimeValue): SqlValue {
   switch (value.type) {
     case ValueType.NUMBER:
       return (value as NumberValue).value;
@@ -32,7 +34,7 @@ function runtimeValueToJs(value: RuntimeValue): any {
     }
     case ValueType.OBJECT: {
       const obj = (value as ObjectValue).properties;
-      const result: Record<string, any> = {};
+      const result: Record<string, SqlValue> = {};
       for (const [key, val] of obj.entries()) {
         result[key] = runtimeValueToJs(val);
       }
@@ -43,7 +45,7 @@ function runtimeValueToJs(value: RuntimeValue): any {
   }
 }
 
-function jsToRuntimeValue(value: any): RuntimeValue {
+function jsToRuntimeValue(value: unknown): RuntimeValue {
   if (value === null || value === undefined) {
     return { type: ValueType.NULL } as NullValue;
   }
@@ -91,7 +93,8 @@ function sqlTypeFromSchemaType(schema_type: string): string {
 function extractSchemaFields(schema: ObjectValue): Array<{ name: string; type: string }> {
   const fields: Array<{ name: string; type: string }> = [];
 
-  const builder = (schema as any)._builder;
+  // `_builder` is the hidden SchemaBuilder that std:schema attaches to schema objects
+  const builder = (schema as unknown as { _builder?: { shape?: Map<string, object> } })._builder;
   if (!builder || !builder.shape) {
     return fields;
   }
@@ -123,7 +126,7 @@ const db_open: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "open",
   return_type: "async Database",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.STRING) {
       return runtimeError("DbError: open() requires 1 string argument (path)");
     }
@@ -145,14 +148,14 @@ const db_open: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to open database: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_close: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "close",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.DATABASE) {
       return runtimeError("DbError: close() requires 1 Database argument");
     }
@@ -166,14 +169,14 @@ const db_close: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to close database: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_collection: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "collection",
   return_type: "Collection",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 3 ||
       args[0].type !== ValueType.DATABASE ||
@@ -217,7 +220,7 @@ const db_collection: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to create table: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_insert: NativeFunctionValue = {
@@ -249,7 +252,7 @@ const db_insert: NativeFunctionValue = {
     const validated = validation_result.value as ObjectValue;
 
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: SqlValue[] = [];
 
     for (const [key, value] of validated.properties.entries()) {
       fields.push(key);
@@ -268,7 +271,7 @@ const db_insert: NativeFunctionValue = {
       const last_id_result = collection.database.connection.query(
         "select last_insert_rowid() as id",
       );
-      const last_id = last_id_result[0][0];
+      const last_id = last_id_result[0][0] as SqlValue;
 
       const select_sql = `select * from ${collection.tableName} where id = ?`;
       const rows = collection.database.connection.query(select_sql, [last_id]);
@@ -284,7 +287,7 @@ const db_insert: NativeFunctionValue = {
       );
 
       for (let i = 0; i < columns.length; i++) {
-        const col_name = columns[i][1];
+        const col_name = columns[i][1] as string;
         const col_value = row[i];
         result_obj.set(col_name, jsToRuntimeValue(col_value));
       }
@@ -336,7 +339,7 @@ const db_get: NativeFunctionValue = {
       );
 
       for (let i = 0; i < columns.length; i++) {
-        const col_name = columns[i][1];
+        const col_name = columns[i][1] as string;
         const col_value = row[i];
         result_obj.set(col_name, jsToRuntimeValue(col_value));
       }
@@ -364,7 +367,7 @@ const db_deleteById: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "deleteById",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 2 ||
       args[0].type !== ValueType.COLLECTION ||
@@ -385,14 +388,14 @@ const db_deleteById: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to delete row: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_select: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "select",
   return_type: "QueryBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.COLLECTION) {
       return runtimeError("DbError: select() requires 1 Collection argument");
     }
@@ -407,14 +410,14 @@ const db_select: NativeFunctionValue = {
       limitValue: null,
       offsetValue: null,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const query_where: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "where",
   return_type: "QueryBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 4 ||
       args[0].type !== ValueType.QUERY_BUILDER ||
@@ -442,14 +445,14 @@ const query_where: NativeFunctionValue = {
       limitValue: builder.limitValue,
       offsetValue: builder.offsetValue,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const query_orderBy: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "orderBy",
   return_type: "QueryBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 3 ||
       args[0].type !== ValueType.QUERY_BUILDER ||
@@ -475,14 +478,14 @@ const query_orderBy: NativeFunctionValue = {
       limitValue: builder.limitValue,
       offsetValue: builder.offsetValue,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const query_limit: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "limit",
   return_type: "QueryBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 2 ||
       args[0].type !== ValueType.QUERY_BUILDER ||
@@ -502,14 +505,14 @@ const query_limit: NativeFunctionValue = {
       limitValue: limit,
       offsetValue: builder.offsetValue,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const query_offset: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "offset",
   return_type: "QueryBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 2 ||
       args[0].type !== ValueType.QUERY_BUILDER ||
@@ -529,12 +532,12 @@ const query_offset: NativeFunctionValue = {
       limitValue: builder.limitValue,
       offsetValue: offset,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
-function buildSelectQuery(builder: QueryBuilderValue): { sql: string; params: any[] } {
+function buildSelectQuery(builder: QueryBuilderValue): { sql: string; params: SqlValue[] } {
   let sql = `select * from ${builder.collection.tableName}`;
-  const params: any[] = [];
+  const params: SqlValue[] = [];
 
   if (builder.whereClauses.length > 0) {
     const conditions = builder.whereClauses.map((clause) => {
@@ -583,7 +586,7 @@ const query_all: NativeFunctionValue = {
       for (const row of rows) {
         const result_obj = new Map<string, RuntimeValue>();
         for (let i = 0; i < columns.length; i++) {
-          const col_name = columns[i][1];
+          const col_name = columns[i][1] as string;
           const col_value = row[i];
           result_obj.set(col_name, jsToRuntimeValue(col_value));
         }
@@ -643,7 +646,7 @@ const query_count: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "count",
   return_type: "async number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.QUERY_BUILDER) {
       return runtimeError("DbError: count() requires 1 QueryBuilder argument");
     }
@@ -651,7 +654,7 @@ const query_count: NativeFunctionValue = {
     const builder = args[0] as QueryBuilderValue;
 
     let sql = `select count(*) as count from ${builder.collection.tableName}`;
-    const params: any[] = [];
+    const params: SqlValue[] = [];
 
     if (builder.whereClauses.length > 0) {
       const conditions = builder.whereClauses.map((clause) => {
@@ -663,20 +666,20 @@ const query_count: NativeFunctionValue = {
 
     try {
       const rows = builder.collection.database.connection.query(sql, params);
-      const count = rows[0][0];
+      const count = rows[0][0] as number;
       return ok({ type: ValueType.NUMBER, value: count } as NumberValue);
     } catch (error) {
       const err = error as Error;
       return runtimeError(`DbError: Failed to count: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_update: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "update",
   return_type: "UpdateBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.COLLECTION) {
       return runtimeError("DbError: update() requires 1 Collection argument");
     }
@@ -691,14 +694,14 @@ const db_update: NativeFunctionValue = {
       limitValue: null,
       offsetValue: null,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const update_set: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "set",
   return_type: "UpdateBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 2 ||
       args[0].type !== ValueType.QUERY_BUILDER ||
@@ -713,20 +716,20 @@ const update_set: NativeFunctionValue = {
     return ok({
       ...builder,
       updateData: data,
-    } as any);
-  },
+    } as QueryBuilderValue);
+  }),
 };
 
 const update_execute: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "execute",
   return_type: "async number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.QUERY_BUILDER) {
       return runtimeError("DbError: execute() requires 1 UpdateBuilder argument");
     }
 
-    const builder: any = args[0];
+    const builder = args[0] as QueryBuilderValue;
 
     if (!builder.updateData) {
       return runtimeError("DbError: Must call set() before execute()");
@@ -734,7 +737,7 @@ const update_execute: NativeFunctionValue = {
 
     const data = builder.updateData as ObjectValue;
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: SqlValue[] = [];
 
     for (const [key, value] of data.properties.entries()) {
       fields.push(`${key} = ?`);
@@ -744,7 +747,7 @@ const update_execute: NativeFunctionValue = {
     let sql = `update ${builder.collection.tableName} set ${fields.join(", ")}`;
 
     if (builder.whereClauses.length > 0) {
-      const conditions = builder.whereClauses.map((clause: any) => {
+      const conditions = builder.whereClauses.map((clause) => {
         values.push(runtimeValueToJs(clause.value));
         return `${clause.field} ${clause.operator} ?`;
       });
@@ -757,21 +760,21 @@ const update_execute: NativeFunctionValue = {
       const changes_result = builder.collection.database.connection.query(
         "select changes() as changes",
       );
-      const changes = changes_result[0][0];
+      const changes = changes_result[0][0] as number;
 
       return ok({ type: ValueType.NUMBER, value: changes } as NumberValue);
     } catch (error) {
       const err = error as Error;
       return runtimeError(`DbError: Failed to update: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_delete: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "delete",
   return_type: "DeleteBuilder",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.COLLECTION) {
       return runtimeError("DbError: delete() requires 1 Collection argument");
     }
@@ -786,14 +789,14 @@ const db_delete: NativeFunctionValue = {
       limitValue: null,
       offsetValue: null,
     } as QueryBuilderValue);
-  },
+  }),
 };
 
 const delete_execute: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "executeDelete",
   return_type: "async number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.QUERY_BUILDER) {
       return runtimeError("DbError: execute() requires 1 DeleteBuilder argument");
     }
@@ -801,7 +804,7 @@ const delete_execute: NativeFunctionValue = {
     const builder = args[0] as QueryBuilderValue;
 
     let sql = `delete from ${builder.collection.tableName}`;
-    const params: any[] = [];
+    const params: SqlValue[] = [];
 
     if (builder.whereClauses.length > 0) {
       const conditions = builder.whereClauses.map((clause) => {
@@ -817,21 +820,21 @@ const delete_execute: NativeFunctionValue = {
       const changes_result = builder.collection.database.connection.query(
         "select changes() as changes",
       );
-      const changes = changes_result[0][0];
+      const changes = changes_result[0][0] as number;
 
       return ok({ type: ValueType.NUMBER, value: changes } as NumberValue);
     } catch (error) {
       const err = error as Error;
       return runtimeError(`DbError: Failed to delete: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_begin: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "begin",
   return_type: "async Transaction",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.DATABASE) {
       return runtimeError("DbError: begin() requires 1 Database argument");
     }
@@ -850,14 +853,14 @@ const db_begin: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to begin transaction: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_commit: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "commit",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.TRANSACTION) {
       return runtimeError("DbError: commit() requires 1 Transaction argument");
     }
@@ -877,14 +880,14 @@ const db_commit: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to commit transaction: ${err.message}`);
     }
-  },
+  }),
 };
 
 const db_rollback: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "rollback",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.TRANSACTION) {
       return runtimeError("DbError: rollback() requires 1 Transaction argument");
     }
@@ -904,7 +907,7 @@ const db_rollback: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`DbError: Failed to rollback transaction: ${err.message}`);
     }
-  },
+  }),
 };
 
 export const db_namespace: Record<string, RuntimeValue> = {

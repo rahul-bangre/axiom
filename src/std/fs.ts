@@ -1,7 +1,15 @@
 import { ok, Result, runtimeError } from "../types/result.ts";
-import type { NativeFunctionValue, RuntimeValue, StringValue } from "../runtime/value.ts";
+import type {
+  ArrayValue,
+  BooleanValue,
+  NativeFunctionValue,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+} from "../runtime/value.ts";
 import { ValueType } from "../runtime/value.ts";
-import { jsToRuntimeValue } from "./json.ts";
+import { type JsonValue, jsToRuntimeValue } from "./json.ts";
 
 const fs_read: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
@@ -228,25 +236,25 @@ const fs_writeJson: NativeFunctionValue = {
 
     let indent: number | undefined = undefined;
     if (indent_arg && indent_arg.type === ValueType.NUMBER) {
-      indent = (indent_arg as any).value;
+      indent = (indent_arg as NumberValue).value;
     }
 
     try {
-      const runtimeToJs = (val: RuntimeValue): any => {
+      const runtimeToJs = (val: RuntimeValue): JsonValue => {
         switch (val.type) {
           case ValueType.NULL:
             return null;
           case ValueType.BOOLEAN:
-            return (val as any).value;
+            return (val as BooleanValue).value;
           case ValueType.NUMBER:
-            return (val as any).value;
+            return (val as NumberValue).value;
           case ValueType.STRING:
-            return (val as any).value;
+            return (val as StringValue).value;
           case ValueType.ARRAY:
-            return (val as any).elements.map(runtimeToJs);
+            return (val as ArrayValue).elements.map(runtimeToJs);
           case ValueType.OBJECT: {
-            const obj: Record<string, any> = {};
-            for (const [key, value] of (val as any).properties) {
+            const obj: Record<string, JsonValue> = {};
+            for (const [key, value] of (val as ObjectValue).properties) {
               obj[key] = runtimeToJs(value);
             }
             return obj;

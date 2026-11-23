@@ -13,7 +13,7 @@ async function runWithFs(code: string): Promise<{ ok: boolean; error?: string }>
     const tokenizer = new Tokenizer(code);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
     const result = await module_loader.loadModule("std:fs", "", global_env);
@@ -101,7 +101,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -121,7 +121,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -141,7 +141,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -161,7 +161,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -180,7 +180,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -200,7 +200,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 
@@ -219,7 +219,7 @@ Deno.test({
     const tokenizer = new Tokenizer(`use "std:fs" as fs`);
     const tokens = tokenizer.tokenize();
     const parser = new Parser(tokens);
-    const ast = parser.parse();
+    parser.parse();
     const global_env = await createGlobalEnv();
     const module_loader = new ModuleLoader();
 

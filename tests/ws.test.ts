@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import { createGlobalEnv, evaluate, RuntimeValue, StringValue, ValueType } from "@runtime";
 import { ModuleLoader } from "../src/runtime/module-loader.ts";
 
 async function run(source: string): Promise<RuntimeValue> {
@@ -43,7 +43,7 @@ Deno.test("WS - can import std:ws module", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "function");
+  assertEquals((result as StringValue).value, "function");
 });
 
 Deno.test("WS - connect requires string URL", async () => {
@@ -127,7 +127,7 @@ Deno.test("WS - connect to echo server", async () => {
     `);
 
     assertEquals(result.type, ValueType.STRING);
-    assertEquals((result as any).value, "Hello WebSocket");
+    assertEquals((result as StringValue).value, "Hello WebSocket");
   });
 });
 
@@ -146,7 +146,7 @@ Deno.test("WS - typeof connection is websocket", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "websocket");
+  assertEquals((result as StringValue).value, "websocket");
 });
 
 Deno.test("WS - invalid URL returns error", async () => {

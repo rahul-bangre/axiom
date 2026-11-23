@@ -42,6 +42,17 @@ export interface NullValue extends RuntimeValue {
   type: ValueType.NULL;
 }
 
+/* Internal signal produced by a `return` statement: a NULL value carrying the returned value. */
+export interface ReturnSignal extends RuntimeValue {
+  type: ValueType.NULL;
+  isReturn: true;
+  returnValue: RuntimeValue;
+}
+
+export function isReturnSignal(value: RuntimeValue): value is ReturnSignal {
+  return Boolean((value as Partial<ReturnSignal>).isReturn);
+}
+
 export interface ArrayValue extends RuntimeValue {
   type: ValueType.ARRAY;
   elements: RuntimeValue[];
@@ -69,6 +80,23 @@ export interface NativeFunctionValue extends RuntimeValue {
   return_type?: string;
 }
 
+/**
+ * Adapts a synchronous implementation to the Promise-returning native call contract.
+ * Behaves exactly like wrapping it in an `async` function: the result is delivered as a
+ * resolved promise and a thrown exception becomes a rejected promise.
+ */
+export function syncCall<A extends unknown[]>(
+  fn: (...args: A) => Result<RuntimeValue>,
+): (...args: A) => Promise<Result<RuntimeValue>> {
+  return (...args) => {
+    try {
+      return Promise.resolve(fn(...args));
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+}
+
 export interface AsyncValue extends RuntimeValue {
   type: ValueType.ASYNC;
   promise: Promise<RuntimeValue>;
@@ -78,9 +106,20 @@ export function makeAsyncValue(promise: Promise<RuntimeValue>): AsyncValue {
   return { type: ValueType.ASYNC, promise };
 }
 
+/* A value that can be bound to, or read back from, a SQL statement. */
+export type SqlValue = boolean | number | bigint | string | null | undefined | Date | Uint8Array;
+
+/* The subset of the sqlite `DB` API the runtime uses. Declared structurally so this module
+   stays free of Deno-only imports (it is shared with the browser playground). */
+export interface SqlConnection {
+  query(sql: string, params?: SqlValue[]): unknown[][];
+  execute(sql: string): void;
+  close(force?: boolean): void;
+}
+
 export interface DatabaseValue extends RuntimeValue {
   type: ValueType.DATABASE;
-  connection: any;
+  connection: SqlConnection;
   path: string;
 }
 
@@ -98,6 +137,8 @@ export interface QueryBuilderValue extends RuntimeValue {
   orderByClauses: Array<{ field: string; direction: string }>;
   limitValue: number | null;
   offsetValue: number | null;
+  /* set by `update(...).set(data)`, read by `execute()` */
+  updateData?: ObjectValue;
 }
 
 export interface TransactionValue extends RuntimeValue {

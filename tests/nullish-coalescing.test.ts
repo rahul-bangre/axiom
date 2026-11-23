@@ -1,7 +1,17 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  ArrayValue,
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function run(source_code: string): Promise<Result<RuntimeValue>> {
@@ -18,7 +28,7 @@ Deno.test("Nullish coalescing - null returns right side", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 42);
+    assertEquals((result.value as NumberValue).value, 42);
   }
 });
 
@@ -27,7 +37,7 @@ Deno.test("Nullish coalescing - non-null returns left side", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 10);
+    assertEquals((result.value as NumberValue).value, 10);
   }
 });
 
@@ -36,7 +46,7 @@ Deno.test("Nullish coalescing - zero is not nullish", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 0);
+    assertEquals((result.value as NumberValue).value, 0);
   }
 });
 
@@ -45,7 +55,7 @@ Deno.test("Nullish coalescing - false is not nullish", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.BOOLEAN);
-    assertEquals((result.value as any).value, false);
+    assertEquals((result.value as BooleanValue).value, false);
   }
 });
 
@@ -54,7 +64,7 @@ Deno.test("Nullish coalescing - empty string is not nullish", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.STRING);
-    assertEquals((result.value as any).value, "");
+    assertEquals((result.value as StringValue).value, "");
   }
 });
 
@@ -63,7 +73,7 @@ Deno.test("Nullish coalescing - string value", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.STRING);
-    assertEquals((result.value as any).value, "hello");
+    assertEquals((result.value as StringValue).value, "hello");
   }
 });
 
@@ -72,7 +82,7 @@ Deno.test("Nullish coalescing - chaining multiple", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 42);
+    assertEquals((result.value as NumberValue).value, 42);
   }
 });
 
@@ -81,7 +91,7 @@ Deno.test("Nullish coalescing - chaining stops at first non-null", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 10);
+    assertEquals((result.value as NumberValue).value, 10);
   }
 });
 
@@ -95,7 +105,7 @@ Deno.test("Nullish coalescing - with variables", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 100);
+    assertEquals((result.value as NumberValue).value, 100);
   }
 });
 
@@ -113,7 +123,7 @@ Deno.test("Nullish coalescing - with function calls", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 42);
+    assertEquals((result.value as NumberValue).value, 42);
   }
 });
 
@@ -122,7 +132,7 @@ Deno.test("Nullish coalescing - with expressions", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 3);
+    assertEquals((result.value as NumberValue).value, 3);
   }
 });
 
@@ -131,7 +141,7 @@ Deno.test("Nullish coalescing - with array", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.ARRAY);
-    assertEquals((result.value as any).elements.length, 3);
+    assertEquals((result.value as ArrayValue).elements.length, 3);
   }
 });
 
@@ -140,8 +150,8 @@ Deno.test("Nullish coalescing - with object", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.OBJECT);
-    const obj = result.value as any;
-    assertEquals(obj.properties.get("name").value, "Alice");
+    const obj = result.value as ObjectValue;
+    assertEquals((obj.properties.get("name") as StringValue).value, "Alice");
   }
 });
 
@@ -150,8 +160,8 @@ Deno.test("Nullish coalescing - null object returns default", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.OBJECT);
-    const obj = result.value as any;
-    assertEquals(obj.properties.get("name").value, "Bob");
+    const obj = result.value as ObjectValue;
+    assertEquals((obj.properties.get("name") as StringValue).value, "Bob");
   }
 });
 
@@ -164,7 +174,7 @@ Deno.test("Nullish coalescing - combined with optional chaining", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.STRING);
-    assertEquals((result.value as any).value, "guest");
+    assertEquals((result.value as StringValue).value, "guest");
   }
 });
 
@@ -177,7 +187,7 @@ Deno.test("Nullish coalescing - optional chaining with existing value", async ()
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.STRING);
-    assertEquals((result.value as any).value, "Alice");
+    assertEquals((result.value as StringValue).value, "Alice");
   }
 });
 
@@ -190,7 +200,7 @@ Deno.test("Nullish coalescing - nested optional chaining", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.STRING);
-    assertEquals((result.value as any).value, "unknown");
+    assertEquals((result.value as StringValue).value, "unknown");
   }
 });
 
@@ -199,7 +209,7 @@ Deno.test("Nullish coalescing - in ternary", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 10);
+    assertEquals((result.value as NumberValue).value, 10);
   }
 });
 
@@ -212,7 +222,7 @@ Deno.test("Nullish coalescing - with comparison", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.BOOLEAN);
-    assertEquals((result.value as any).value, true);
+    assertEquals((result.value as BooleanValue).value, true);
   }
 });
 
@@ -228,7 +238,7 @@ Deno.test("Nullish coalescing - short-circuit evaluation", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.NUMBER);
-    assertEquals((result.value as any).value, 10);
+    assertEquals((result.value as NumberValue).value, 10);
   }
 });
 
@@ -237,6 +247,6 @@ Deno.test("Nullish coalescing - with logical operators", async () => {
   assertEquals(result.ok, true);
   if (result.ok) {
     assertEquals(result.value.type, ValueType.BOOLEAN);
-    assertEquals((result.value as any).value, true);
+    assertEquals((result.value as BooleanValue).value, true);
   }
 });

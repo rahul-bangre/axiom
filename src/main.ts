@@ -1,4 +1,4 @@
-async function runFile(filename: string): Promise<void> {
+function runFile(filename: string): void {
   // TODO: Implement file execution
   console.log(`Running ${filename}...`);
 }
@@ -25,7 +25,7 @@ if (import.meta.main) {
     if (args[0] === "--help" || args[0] === "-h") {
       printUsage();
     } else {
-      await runFile(args[0]);
+      runFile(args[0]);
     }
   } else {
     printUsage();

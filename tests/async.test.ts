@@ -1,7 +1,15 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  ArrayValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function runRaw(source_code: string): Promise<Result<RuntimeValue>> {
@@ -48,7 +56,7 @@ Deno.test("Async - await resolves AsyncValue to underlying value", async () => {
       return 42
     }
     await get_value()
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.type, ValueType.NUMBER);
   assertEquals(result.value, 42);
@@ -60,7 +68,7 @@ Deno.test("Async - await on string async", async () => {
       return "Alice"
     }
     await get_name()
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.type, ValueType.STRING);
   assertEquals(result.value, "Alice");
@@ -73,7 +81,7 @@ Deno.test("Async - typeof returns async for AsyncValue", async () => {
     }
     val = get_value()
     typeof val
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "async");
 });
@@ -85,7 +93,7 @@ Deno.test("Async - typeof after await returns underlying type", async () => {
     }
     val = await get_value()
     typeof val
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "number");
 });
@@ -104,7 +112,7 @@ Deno.test("Async - await inside async function", async () => {
     }
     
     await outer()
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.type, ValueType.NUMBER);
   assertEquals(result.value, 10);
@@ -123,7 +131,7 @@ Deno.test("Async - multiple awaits in sequence", async () => {
     a = await get_a()
     b = await get_b()
     a + b
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 10);
 });
@@ -138,7 +146,7 @@ Deno.test("Async - async with array return", async () => {
   `);
 
   assertEquals(result.type, ValueType.ARRAY);
-  const arr = result as any;
+  const arr = result as ArrayValue;
   assertEquals(arr.elements.length, 3);
 });
 
@@ -150,7 +158,7 @@ Deno.test("Async - async with object return", async () => {
     
     user = await get_user()
     user.name
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "Bob");
 });
@@ -199,7 +207,7 @@ Deno.test("Async - arithmetic with awaited values", async () => {
     x = await get_x()
     y = await get_y()
     x + y
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 15);
 });
@@ -217,7 +225,7 @@ Deno.test("Async - string concatenation with awaited values", async () => {
     a = await get_first()
     b = await get_second()
     a + " " + b
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "Hello World");
 });
@@ -232,10 +240,10 @@ Deno.test("Async - array methods with async", async () => {
     nums.map((x) => x * 2)
   `);
 
-  const arr = result as any;
-  assertEquals(arr.elements[0].value, 2);
-  assertEquals(arr.elements[1].value, 4);
-  assertEquals(arr.elements[4].value, 10);
+  const arr = result as ArrayValue;
+  assertEquals((arr.elements[0] as NumberValue).value, 2);
+  assertEquals((arr.elements[1] as NumberValue).value, 4);
+  assertEquals((arr.elements[4] as NumberValue).value, 10);
 });
 
 // ==================== Async with Conditionals ====================
@@ -248,7 +256,7 @@ Deno.test("Async - await in ternary expression", async () => {
     
     x = true ? await get_value() : 0
     x
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 10);
 });
@@ -263,7 +271,7 @@ Deno.test("Async - async function with conditional return", async () => {
     }
     
     await maybe_value(true)
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 100);
 });
@@ -279,7 +287,7 @@ Deno.test("Async - store async value in variable", async () => {
     async_var = get_val()
     resolved = await async_var
     resolved
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 99);
 });
@@ -297,7 +305,7 @@ Deno.test("Async - pass async value around before awaiting", async () => {
     
     val = wrapper()
     await val
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "deferred");
 });

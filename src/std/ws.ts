@@ -1,14 +1,15 @@
-import { ok, Result, runtimeError } from "../types/result.ts";
+import { ok, type Result, runtimeError } from "../types/result.ts";
 import {
-  FunctionValue,
-  NativeFunctionValue,
-  NullValue,
-  RuntimeValue,
-  StringValue,
+  type FunctionValue,
+  type NativeFunctionValue,
+  type NullValue,
+  type NumberValue,
+  type RuntimeValue,
+  type StringValue,
+  syncCall,
   ValueType,
-  WebSocketConnectionValue,
+  type WebSocketConnectionValue,
 } from "../runtime/value.ts";
-import { Environment } from "../runtime/environment.ts";
 import { evaluate } from "../runtime/evaluator.ts";
 
 const ws_connect: NativeFunctionValue = {
@@ -67,7 +68,7 @@ const ws_send: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "send",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (
       args.length !== 2 ||
       args[0].type !== ValueType.WEBSOCKET_CONNECTION ||
@@ -90,27 +91,29 @@ const ws_send: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`WsError: Failed to send message: ${err.message}`);
     }
-  },
+  }),
 };
 
 const ws_recv: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "recv",
   return_type: "async string",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
     if (args.length !== 1 || args[0].type !== ValueType.WEBSOCKET_CONNECTION) {
-      return runtimeError("WsError: recv() requires 1 WebSocketConnection argument");
+      return Promise.resolve(
+        runtimeError("WsError: recv() requires 1 WebSocketConnection argument"),
+      );
     }
 
     const connection = args[0] as WebSocketConnectionValue;
 
     if (connection.closed) {
-      return runtimeError("WsError: Cannot receive message on closed connection");
+      return Promise.resolve(runtimeError("WsError: Cannot receive message on closed connection"));
     }
 
     if (connection.messageQueue.length > 0) {
       const message = connection.messageQueue.shift()!;
-      return ok({ type: ValueType.STRING, value: message } as StringValue);
+      return Promise.resolve(ok({ type: ValueType.STRING, value: message } as StringValue));
     }
 
     return new Promise<Result<RuntimeValue>>((resolve) => {
@@ -125,7 +128,7 @@ const ws_close: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "close",
   return_type: "async null",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1 || args[0].type !== ValueType.WEBSOCKET_CONNECTION) {
       return runtimeError("WsError: close() requires 1 WebSocketConnection argument");
     }
@@ -142,7 +145,7 @@ const ws_close: NativeFunctionValue = {
       const err = error as Error;
       return runtimeError(`WsError: Failed to close connection: ${err.message}`);
     }
-  },
+  }),
 };
 
 const ws_server: NativeFunctionValue = {
@@ -158,7 +161,7 @@ const ws_server: NativeFunctionValue = {
       return runtimeError("WsError: server() requires (number, function)");
     }
 
-    const port = (args[0] as any).value;
+    const port = (args[0] as NumberValue).value;
     const handler_fn = args[1] as FunctionValue;
 
     if (handler_fn.params.length !== 1) {

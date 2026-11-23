@@ -9,7 +9,7 @@ export class Interpreter {
     this.global_env = new Environment();
   }
 
-  evaluate(node: AST.ASTNode, env: Environment = this.global_env): RuntimeValue {
+  evaluate(_node: AST.ASTNode, _env: Environment = this.global_env): RuntimeValue {
     // TODO: Implement interpreter
     throw new Error("Not implemented");
   }

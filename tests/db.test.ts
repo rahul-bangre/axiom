@@ -1,11 +1,21 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate } from "@runtime";
+import {
+  ArrayValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { ModuleLoader } from "../src/runtime/module-loader.ts";
-import { ValueType } from "@runtime";
 
-async function runProgram(code: string): Promise<{ ok: boolean; value?: any; error?: string }> {
+async function runProgram(
+  code: string,
+): Promise<{ ok: boolean; value?: RuntimeValue; error?: string }> {
   const tokenizer = new Tokenizer(code);
   const tokens = tokenizer.tokenize();
   const parser = new Parser(tokens);
@@ -73,8 +83,11 @@ Deno.test("DB - insert and retrieve row", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).properties.get("name").value, "Alice");
-  assertEquals((result.value as any).properties.get("age").value, 25);
+  assertEquals(
+    ((result.value as ObjectValue).properties.get("name") as StringValue).value,
+    "Alice",
+  );
+  assertEquals(((result.value as ObjectValue).properties.get("age") as NumberValue).value, 25);
 });
 
 Deno.test("DB - query with where clause", async () => {
@@ -99,8 +112,8 @@ Deno.test("DB - query with where clause", async () => {
     console.log("Query where error:", result.error);
   }
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).type, ValueType.ARRAY);
-  assertEquals((result.value as any).elements.length, 2);
+  assertEquals((result.value as RuntimeValue).type, ValueType.ARRAY);
+  assertEquals((result.value as ArrayValue).elements.length, 2);
 });
 
 Deno.test("DB - query with orderBy", async () => {
@@ -122,10 +135,10 @@ Deno.test("DB - query with orderBy", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  const arr = (result.value as any).elements;
-  assertEquals(arr[0].properties.get("age").value, 20);
-  assertEquals(arr[1].properties.get("age").value, 25);
-  assertEquals(arr[2].properties.get("age").value, 30);
+  const arr = (result.value as ArrayValue).elements;
+  assertEquals(((arr[0] as ObjectValue).properties.get("age") as NumberValue).value, 20);
+  assertEquals(((arr[1] as ObjectValue).properties.get("age") as NumberValue).value, 25);
+  assertEquals(((arr[2] as ObjectValue).properties.get("age") as NumberValue).value, 30);
 });
 
 Deno.test("DB - query with limit", async () => {
@@ -147,7 +160,7 @@ Deno.test("DB - query with limit", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).elements.length, 2);
+  assertEquals((result.value as ArrayValue).elements.length, 2);
 });
 
 Deno.test("DB - query first", async () => {
@@ -168,7 +181,7 @@ Deno.test("DB - query first", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).properties.get("name").value, "Bob");
+  assertEquals(((result.value as ObjectValue).properties.get("name") as StringValue).value, "Bob");
 });
 
 Deno.test("DB - query count", async () => {
@@ -190,7 +203,7 @@ Deno.test("DB - query count", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 2);
+  assertEquals((result.value as NumberValue).value, 2);
 });
 
 Deno.test("DB - update rows", async () => {
@@ -211,7 +224,7 @@ Deno.test("DB - update rows", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).properties.get("age").value, 26);
+  assertEquals(((result.value as ObjectValue).properties.get("age") as NumberValue).value, 26);
 });
 
 Deno.test("DB - deleteById", async () => {
@@ -232,7 +245,7 @@ Deno.test("DB - deleteById", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).type, ValueType.NULL);
+  assertEquals((result.value as RuntimeValue).type, ValueType.NULL);
 });
 
 Deno.test("DB - delete with where", async () => {
@@ -255,7 +268,7 @@ Deno.test("DB - delete with where", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 2);
+  assertEquals((result.value as NumberValue).value, 2);
 });
 
 Deno.test("DB - transaction commit", async () => {
@@ -277,7 +290,7 @@ Deno.test("DB - transaction commit", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 1);
+  assertEquals((result.value as NumberValue).value, 1);
 });
 
 Deno.test("DB - transaction rollback", async () => {
@@ -301,7 +314,7 @@ Deno.test("DB - transaction rollback", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  assertEquals((result.value as any).value, 1);
+  assertEquals((result.value as NumberValue).value, 1);
 });
 
 Deno.test("DB - schema validation on insert", async () => {
@@ -347,8 +360,8 @@ Deno.test("DB - complex query chaining", async () => {
   `;
   const result = await runProgram(code);
   assertEquals(result.ok, true);
-  const arr = (result.value as any).elements;
+  const arr = (result.value as ArrayValue).elements;
   assertEquals(arr.length, 2);
-  assertEquals(arr[0].properties.get("name").value, "Bob");
-  assertEquals(arr[1].properties.get("name").value, "Charlie");
+  assertEquals(((arr[0] as ObjectValue).properties.get("name") as StringValue).value, "Bob");
+  assertEquals(((arr[1] as ObjectValue).properties.get("name") as StringValue).value, "Charlie");
 });

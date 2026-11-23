@@ -1,11 +1,17 @@
 import { ok, Result, runtimeError } from "../types/result.ts";
-import { NativeFunctionValue, NumberValue, RuntimeValue, ValueType } from "../runtime/value.ts";
+import {
+  NativeFunctionValue,
+  NumberValue,
+  RuntimeValue,
+  syncCall,
+  ValueType,
+} from "../runtime/value.ts";
 
 const math_clamp: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "clamp",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 3) {
       return runtimeError("MathError: clamp() requires exactly 3 arguments (value, min, max)");
     }
@@ -25,14 +31,14 @@ const math_clamp: NativeFunctionValue = {
 
     const clamped = Math.min(Math.max(value, min), max);
     return ok({ type: ValueType.NUMBER, value: clamped } as NumberValue);
-  },
+  }),
 };
 
 const math_sqrt: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "sqrt",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: sqrt() requires exactly 1 argument");
     }
@@ -44,14 +50,14 @@ const math_sqrt: NativeFunctionValue = {
       return runtimeError("MathError: sqrt() cannot compute square root of negative number");
     }
     return ok({ type: ValueType.NUMBER, value: Math.sqrt(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_pow: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "pow",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 2) {
       return runtimeError("MathError: pow() requires exactly 2 arguments (base, exponent)");
     }
@@ -61,14 +67,14 @@ const math_pow: NativeFunctionValue = {
     const base = (args[0] as NumberValue).value;
     const exponent = (args[1] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.pow(base, exponent) } as NumberValue);
-  },
+  }),
 };
 
 const math_exp: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "exp",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: exp() requires exactly 1 argument");
     }
@@ -77,14 +83,14 @@ const math_exp: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.exp(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_log: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "log",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length < 1 || args.length > 2) {
       return runtimeError("MathError: log() requires 1 or 2 arguments (value, base?)");
     }
@@ -108,14 +114,14 @@ const math_log: NativeFunctionValue = {
     }
 
     return ok({ type: ValueType.NUMBER, value: Math.log(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_sign: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "sign",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: sign() requires exactly 1 argument");
     }
@@ -124,14 +130,14 @@ const math_sign: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.sign(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_round: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "round",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: round() requires exactly 1 argument");
     }
@@ -140,14 +146,14 @@ const math_round: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.round(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_floor: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "floor",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: floor() requires exactly 1 argument");
     }
@@ -156,14 +162,14 @@ const math_floor: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.floor(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_ceil: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "ceil",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: ceil() requires exactly 1 argument");
     }
@@ -172,14 +178,14 @@ const math_ceil: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.ceil(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_trunc: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "trunc",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("MathError: trunc() requires exactly 1 argument");
     }
@@ -188,19 +194,19 @@ const math_trunc: NativeFunctionValue = {
     }
     const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.trunc(value) } as NumberValue);
-  },
+  }),
 };
 
 const math_random: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "random",
   return_type: "number",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 0) {
       return runtimeError("MathError: random() requires no arguments");
     }
     return ok({ type: ValueType.NUMBER, value: Math.random() } as NumberValue);
-  },
+  }),
 };
 
 export const math_namespace: Record<string, RuntimeValue> = {

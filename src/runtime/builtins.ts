@@ -5,33 +5,42 @@ import { createHttpNamespace } from "../std/http.ts";
 import { set_constructor } from "../std/set.ts";
 import { map_constructor } from "../std/map.ts";
 import { Environment } from "./environment.ts";
-import { NativeFunctionValue, ObjectValue, RuntimeValue, ValueType } from "./value.ts";
+import {
+  type ArrayValue,
+  type BooleanValue,
+  type FunctionValue,
+  NativeFunctionValue,
+  type NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  type StringValue,
+  syncCall,
+  ValueType,
+} from "./value.ts";
 
 function printValue(value: RuntimeValue): string {
   switch (value.type) {
     case ValueType.NUMBER:
-      return String((value as any).value);
+      return String((value as NumberValue).value);
     case ValueType.STRING:
-      return (value as any).value;
+      return (value as StringValue).value;
     case ValueType.BOOLEAN:
-      return String((value as any).value);
+      return String((value as BooleanValue).value);
     case ValueType.NULL:
       return "null";
     case ValueType.ARRAY: {
-      const elements = (value as any).elements.map(printValue);
+      const elements = (value as ArrayValue).elements.map(printValue);
       return `[${elements.join(", ")}]`;
     }
     case ValueType.OBJECT: {
-      const entries = Array.from((value as any).properties.entries()) as Array<
-        [string, RuntimeValue]
-      >;
+      const entries = Array.from((value as ObjectValue).properties.entries());
       const props = entries.map(([key, val]) => `${key}: ${printValue(val)}`);
       return `{${props.join(", ")}}`;
     }
     case ValueType.FUNCTION:
-      return `<function ${(value as any).name}>`;
+      return `<function ${(value as FunctionValue).name}>`;
     case ValueType.NATIVE_FUNCTION:
-      return `<native function ${(value as any).name}>`;
+      return `<native function ${(value as NativeFunctionValue).name}>`;
     default:
       return String(value);
   }
@@ -40,17 +49,17 @@ function printValue(value: RuntimeValue): string {
 const print: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "print",
-  call: async (args: RuntimeValue[]) => {
+  call: syncCall((args: RuntimeValue[]) => {
     const output_str = args.map(printValue).join(" ");
     console.log(output_str);
     return ok({ type: ValueType.NULL });
-  },
+  }),
 };
 
 const len: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "len",
-  call: async (args: RuntimeValue[]) => {
+  call: syncCall((args: RuntimeValue[]) => {
     if (args.length !== 1) {
       return runtimeError("len() expects exactly 1 argument");
     }
@@ -58,36 +67,36 @@ const len: NativeFunctionValue = {
     const arg_val = args[0];
 
     if (arg_val.type === ValueType.STRING) {
-      return ok({ type: ValueType.NUMBER, value: (arg_val as any).value.length });
+      return ok({ type: ValueType.NUMBER, value: (arg_val as StringValue).value.length });
     }
 
     if (arg_val.type === ValueType.ARRAY) {
-      return ok({ type: ValueType.NUMBER, value: (arg_val as any).elements.length });
+      return ok({ type: ValueType.NUMBER, value: (arg_val as ArrayValue).elements.length });
     }
 
     return runtimeError(`len() requires a string or array, got ${arg_val.type}`);
-  },
+  }),
 };
 
 const abs: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "abs",
-  call: async (args: RuntimeValue[]) => {
+  call: syncCall((args: RuntimeValue[]) => {
     if (args.length !== 1) {
       return runtimeError("abs() expects exactly 1 argument");
     }
     if (args[0].type !== ValueType.NUMBER) {
       return runtimeError("abs() requires a number argument");
     }
-    const value = (args[0] as any).value;
+    const value = (args[0] as NumberValue).value;
     return ok({ type: ValueType.NUMBER, value: Math.abs(value) });
-  },
+  }),
 };
 
 const min: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "min",
-  call: async (args: RuntimeValue[]) => {
+  call: syncCall((args: RuntimeValue[]) => {
     if (args.length === 0) {
       return runtimeError("min() requires at least 1 argument");
     }
@@ -96,15 +105,15 @@ const min: NativeFunctionValue = {
         return runtimeError("min() requires all arguments to be numbers");
       }
     }
-    const values = args.map((arg) => (arg as any).value);
+    const values = args.map((arg) => (arg as NumberValue).value);
     return ok({ type: ValueType.NUMBER, value: Math.min(...values) });
-  },
+  }),
 };
 
 const max: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "max",
-  call: async (args: RuntimeValue[]) => {
+  call: syncCall((args: RuntimeValue[]) => {
     if (args.length === 0) {
       return runtimeError("max() requires at least 1 argument");
     }
@@ -113,9 +122,9 @@ const max: NativeFunctionValue = {
         return runtimeError("max() requires all arguments to be numbers");
       }
     }
-    const values = args.map((arg) => (arg as any).value);
+    const values = args.map((arg) => (arg as NumberValue).value);
     return ok({ type: ValueType.NUMBER, value: Math.max(...values) });
-  },
+  }),
 };
 
 /* create a global environment with built-in functions */

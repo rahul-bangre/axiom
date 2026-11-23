@@ -24,14 +24,14 @@ class SchemaBuilder {
     return this;
   }
 
-  async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
+  validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
     for (const rule of this.rules) {
       const result = rule.validate(value);
       if (!result.ok) {
-        return result;
+        return Promise.resolve(result);
       }
     }
-    return ok(value);
+    return Promise.resolve(ok(value));
   }
 }
 
@@ -280,8 +280,8 @@ class LazySchema extends SchemaBuilder {
 }
 
 class AnySchema extends SchemaBuilder {
-  override async validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
-    return ok(value);
+  override validate(value: RuntimeValue): Promise<Result<RuntimeValue>> {
+    return Promise.resolve(ok(value));
   }
 }
 
@@ -650,7 +650,7 @@ function createObjectExtendFunction(builder: ObjectSchema): NativeFunctionValue 
   return {
     type: ValueType.NATIVE_FUNCTION,
     name: "extend",
-    call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+    call: (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
       if (args.length !== 1 || args[0].type !== ValueType.OBJECT) {
         return Promise.resolve(runtimeError("extend() requires an object argument"));
       }

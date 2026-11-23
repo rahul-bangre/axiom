@@ -1,33 +1,44 @@
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  ArrayValue,
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  FunctionValue,
+  isReturnSignal,
+  NativeFunctionValue,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { ModuleLoader } from "./runtime/module-loader.ts";
 
 function printValue(value: RuntimeValue): string {
   switch (value.type) {
     case ValueType.NUMBER:
-      return String((value as any).value);
+      return String((value as NumberValue).value);
     case ValueType.STRING:
-      return (value as any).value;
+      return (value as StringValue).value;
     case ValueType.BOOLEAN:
-      return String((value as any).value);
+      return String((value as BooleanValue).value);
     case ValueType.NULL:
       return "null";
     case ValueType.ARRAY: {
-      const elements = (value as any).elements.map(printValue);
+      const elements = (value as ArrayValue).elements.map(printValue);
       return `[${elements.join(", ")}]`;
     }
     case ValueType.OBJECT: {
-      const entries = Array.from((value as any).properties.entries()) as Array<
-        [string, RuntimeValue]
-      >;
+      const entries = Array.from((value as ObjectValue).properties.entries());
       const props = entries.map(([key, val]) => `${key}: ${printValue(val)}`);
       return `{${props.join(", ")}}`;
     }
     case ValueType.FUNCTION:
-      return `<function ${(value as any).name}>`;
+      return `<function ${(value as FunctionValue).name}>`;
     case ValueType.NATIVE_FUNCTION:
-      return `<native function ${(value as any).name}>`;
+      return `<native function ${(value as NativeFunctionValue).name}>`;
     default:
       return String(value);
   }
@@ -56,7 +67,7 @@ async function runFile(file_path: string): Promise<void> {
     }
 
     const result_val = eval_result.value;
-    if (result_val.type !== ValueType.NULL || (result_val as any).isReturn) {
+    if (result_val.type !== ValueType.NULL || isReturnSignal(result_val)) {
       console.log(printValue(result_val));
     }
   } catch (error) {

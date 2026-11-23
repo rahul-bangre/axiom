@@ -1,4 +1,11 @@
-import type { RuntimeValue } from "../runtime/value.ts";
+import type {
+  ArrayValue,
+  BooleanValue,
+  NumberValue,
+  ObjectValue,
+  RuntimeValue,
+  StringValue,
+} from "../runtime/value.ts";
 import { ValueType } from "../runtime/value.ts";
 
 const HASH_BITS = 5;
@@ -13,15 +20,15 @@ function hashRuntimeValue(value: RuntimeValue): number {
       return 0;
 
     case ValueType.BOOLEAN:
-      return (value as any).value ? 1 : 0;
+      return (value as BooleanValue).value ? 1 : 0;
 
     case ValueType.NUMBER: {
-      const num = (value as any).value;
+      const num = (value as NumberValue).value;
       return num | 0;
     }
 
     case ValueType.STRING: {
-      const str = (value as any).value;
+      const str = (value as StringValue).value;
       for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash) + str.charCodeAt(i);
         hash = hash & hash;
@@ -34,6 +41,8 @@ function hashRuntimeValue(value: RuntimeValue): number {
   }
 }
 
+type PrimitiveValue = BooleanValue | NumberValue | StringValue;
+
 function equalsRuntimeValue(a: RuntimeValue, b: RuntimeValue): boolean {
   if (a.type !== b.type) return false;
 
@@ -44,11 +53,11 @@ function equalsRuntimeValue(a: RuntimeValue, b: RuntimeValue): boolean {
     case ValueType.BOOLEAN:
     case ValueType.NUMBER:
     case ValueType.STRING:
-      return (a as any).value === (b as any).value;
+      return (a as PrimitiveValue).value === (b as PrimitiveValue).value;
 
     case ValueType.ARRAY: {
-      const arr_a = (a as any).elements;
-      const arr_b = (b as any).elements;
+      const arr_a = (a as ArrayValue).elements;
+      const arr_b = (b as ArrayValue).elements;
       if (arr_a.length !== arr_b.length) return false;
       for (let i = 0; i < arr_a.length; i++) {
         if (!equalsRuntimeValue(arr_a[i], arr_b[i])) return false;
@@ -57,12 +66,12 @@ function equalsRuntimeValue(a: RuntimeValue, b: RuntimeValue): boolean {
     }
 
     case ValueType.OBJECT: {
-      const props_a = (a as any).properties;
-      const props_b = (b as any).properties;
+      const props_a = (a as ObjectValue).properties;
+      const props_b = (b as ObjectValue).properties;
       if (props_a.size !== props_b.size) return false;
       for (const [key, val] of props_a.entries()) {
         if (!props_b.has(key)) return false;
-        if (!equalsRuntimeValue(val, props_b.get(key))) return false;
+        if (!equalsRuntimeValue(val, props_b.get(key)!)) return false;
       }
       return true;
     }
@@ -403,4 +412,19 @@ export class HAMT {
       yield value;
     }
   }
+}
+
+/* Set and Map objects keep their backing HAMT in a hidden `__hamt__` property. The handle is
+   not a real runtime value (it has no `type`), so it goes through an unchecked cast. */
+interface HAMTHandle {
+  hamt: HAMT;
+}
+
+export function hamtHandle(hamt: HAMT): RuntimeValue {
+  const handle: HAMTHandle = { hamt };
+  return handle as unknown as RuntimeValue;
+}
+
+export function hamtFromHandle(handle: RuntimeValue): HAMT {
+  return (handle as unknown as HAMTHandle).hamt;
 }

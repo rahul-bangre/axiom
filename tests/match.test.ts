@@ -1,7 +1,14 @@
-import { assertEquals, assertRejects } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 import { Result } from "../src/types/result.ts";
 
 async function runRaw(source_code: string): Promise<Result<RuntimeValue>> {
@@ -39,7 +46,7 @@ Deno.test("Match - basic number matching", async () => {
       2 -> "two",
       default -> "other"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "one");
 });
@@ -51,7 +58,7 @@ Deno.test("Match - matches first case", async () => {
       1 -> "one",
       default -> "other"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "zero");
 });
@@ -63,7 +70,7 @@ Deno.test("Match - uses default case", async () => {
       1 -> "one",
       default -> "not found"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "not found");
 });
@@ -76,7 +83,7 @@ Deno.test("Match - string matching", async () => {
       "bye" -> "farewell",
       default -> "unknown"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "greeting2");
 });
@@ -88,7 +95,7 @@ Deno.test("Match - boolean matching", async () => {
       true -> "yes",
       default -> "maybe"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "yes");
 });
@@ -100,7 +107,7 @@ Deno.test("Match - null matching", async () => {
       null -> "nothing",
       default -> "something"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "nothing");
 });
@@ -116,7 +123,7 @@ Deno.test("Match - with variable", async () => {
       500 -> "Error",
       default -> "Unknown"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "Not Found");
 });
@@ -130,7 +137,7 @@ Deno.test("Match - with expression", async () => {
       15 -> "fifteen",
       default -> "other"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "ten");
 });
@@ -146,7 +153,7 @@ Deno.test("Match - can be assigned to variable", async () => {
       default -> "many"
     )
     msg
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "two");
 });
@@ -159,7 +166,7 @@ Deno.test("Match - can be used in expression", async () => {
       1 -> "one",
       default -> "many"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "Value is: one");
 });
@@ -176,7 +183,7 @@ Deno.test("Match - can be used in function call", async () => {
       5 -> 10,
       default -> 1
     ))
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result.value, 20);
 });
@@ -188,7 +195,7 @@ Deno.test("Match - default only", async () => {
     match(999,
       default -> "always"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "always");
 });
@@ -200,7 +207,7 @@ Deno.test("Match - first matching case wins", async () => {
       1 -> "second",
       default -> "default"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "first");
 });
@@ -212,7 +219,7 @@ Deno.test("Match - default can be anywhere", async () => {
       default -> "fallback",
       2 -> "two"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "fallback");
 });
@@ -246,7 +253,7 @@ Deno.test("Match - with nested match", async () => {
       2 -> "two",
       default -> "other"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "one-two");
 });
@@ -261,7 +268,7 @@ Deno.test("Match - with function call in pattern", async () => {
       getValue() -> "matched",
       default -> "not matched"
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result.value, "matched");
 });
@@ -273,7 +280,7 @@ Deno.test("Match - returns different types", async () => {
       1 -> "one",
       default -> null
     )
-  `) as any;
+  `) as StringValue;
 
   assertEquals(result1.type, ValueType.STRING);
   assertEquals(result1.value, "one");
@@ -284,7 +291,7 @@ Deno.test("Match - returns different types", async () => {
       1 -> "one",
       default -> null
     )
-  `) as any;
+  `) as NumberValue;
 
   assertEquals(result2.type, ValueType.NUMBER);
   assertEquals(result2.value, 42);

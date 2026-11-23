@@ -1,8 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
-import { Result } from "../src/types/result.ts";
+import { createGlobalEnv, evaluate } from "@runtime";
 
 interface TestResult {
   ok: boolean;

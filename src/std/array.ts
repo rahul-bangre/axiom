@@ -5,6 +5,7 @@ import {
   NumberValue,
   RuntimeValue,
   StringValue,
+  syncCall,
   ValueType,
 } from "@runtime";
 import { ok, Result, runtimeError, typeError } from "../types/result.ts";
@@ -17,13 +18,13 @@ export function createArrayMethods(
   isTruthy: IsTruthy,
 ): Record<string, (arr: ArrayValue, ...args: RuntimeValue[]) => Promise<Result<RuntimeValue>>> {
   return {
-    push: async (arr_val, elem_val) => {
+    push: syncCall((arr_val, elem_val) => {
       return ok({
         type: ValueType.ARRAY,
         elements: [...arr_val.elements, elem_val],
       } as ArrayValue);
-    },
-    pop: async (arr_val) => {
+    }),
+    pop: syncCall((arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("pop() called on empty array");
       }
@@ -31,20 +32,20 @@ export function createArrayMethods(
         type: ValueType.ARRAY,
         elements: arr_val.elements.slice(0, -1),
       } as ArrayValue);
-    },
-    first: async (arr_val) => {
+    }),
+    first: syncCall((arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("first() called on empty array");
       }
       return ok(arr_val.elements[0]);
-    },
-    last: async (arr_val) => {
+    }),
+    last: syncCall((arr_val) => {
       if (arr_val.elements.length === 0) {
         return runtimeError("last() called on empty array");
       }
       return ok(arr_val.elements[arr_val.elements.length - 1]);
-    },
-    slice: async (arr_val, start_val, end_val?) => {
+    }),
+    slice: syncCall((arr_val, start_val, end_val?) => {
       if (start_val.type !== ValueType.NUMBER) {
         return typeError(`slice() start index must be a number, got ${start_val.type}`);
       }
@@ -60,8 +61,8 @@ export function createArrayMethods(
         type: ValueType.ARRAY,
         elements: arr_val.elements.slice(start_idx, end_idx),
       } as ArrayValue);
-    },
-    concat: async (arr_val, other_val) => {
+    }),
+    concat: syncCall((arr_val, other_val) => {
       if (other_val.type !== ValueType.ARRAY) {
         return typeError(`concat() requires an array, got ${other_val.type}`);
       }
@@ -69,7 +70,7 @@ export function createArrayMethods(
         type: ValueType.ARRAY,
         elements: [...arr_val.elements, ...(other_val as ArrayValue).elements],
       } as ArrayValue);
-    },
+    }),
     map: async (arr_val, fn_val) => {
       if (fn_val.type !== ValueType.FUNCTION && fn_val.type !== ValueType.NATIVE_FUNCTION) {
         return typeError(`map() requires a function, got ${fn_val.type}`);
@@ -198,7 +199,7 @@ export function createArrayMethods(
         elements: flattened_elements,
       } as ArrayValue);
     },
-    join: async (arr_val, separator_val?) => {
+    join: syncCall((arr_val, separator_val?) => {
       const separator = separator_val && separator_val.type === ValueType.STRING
         ? (separator_val as StringValue).value
         : ",";
@@ -221,14 +222,14 @@ export function createArrayMethods(
         type: ValueType.STRING,
         value: string_parts.join(separator),
       } as StringValue);
-    },
-    reverse: async (arr_val) => {
+    }),
+    reverse: syncCall((arr_val) => {
       return ok({
         type: ValueType.ARRAY,
         elements: [...arr_val.elements].reverse(),
       } as ArrayValue);
-    },
-    sort: async (arr_val) => {
+    }),
+    sort: syncCall((arr_val) => {
       const sorted = [...arr_val.elements].sort((a, b) => {
         if (a.type === ValueType.NUMBER && b.type === ValueType.NUMBER) {
           return (a as NumberValue).value - (b as NumberValue).value;
@@ -245,6 +246,6 @@ export function createArrayMethods(
         type: ValueType.ARRAY,
         elements: sorted,
       } as ArrayValue);
-    },
+    }),
   };
 }

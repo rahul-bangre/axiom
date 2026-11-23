@@ -1,7 +1,15 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { Tokenizer } from "@lexer";
 import { Parser } from "@parser";
-import { createGlobalEnv, evaluate, RuntimeValue, ValueType } from "@runtime";
+import {
+  BooleanValue,
+  createGlobalEnv,
+  evaluate,
+  NumberValue,
+  RuntimeValue,
+  StringValue,
+  ValueType,
+} from "@runtime";
 
 async function run(source: string): Promise<RuntimeValue> {
   const tokenizer = new Tokenizer(source);
@@ -40,7 +48,7 @@ Deno.test("Map - create empty map", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "object");
+  assertEquals((result as StringValue).value, "object");
 });
 
 Deno.test("Map - create from object", async () => {
@@ -50,7 +58,7 @@ Deno.test("Map - create from object", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - get returns value", async () => {
@@ -60,7 +68,7 @@ Deno.test("Map - get returns value", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 21);
+  assertEquals((result as NumberValue).value, 21);
 });
 
 Deno.test("Map - get returns null for missing key", async () => {
@@ -80,7 +88,7 @@ Deno.test("Map - set adds new entry", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 3);
+  assertEquals((result as NumberValue).value, 3);
 });
 
 Deno.test("Map - set updates existing entry", async () => {
@@ -91,7 +99,7 @@ Deno.test("Map - set updates existing entry", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 30);
+  assertEquals((result as NumberValue).value, 30);
 });
 
 Deno.test("Map - original unchanged after set", async () => {
@@ -102,7 +110,7 @@ Deno.test("Map - original unchanged after set", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - has returns true for existing key", async () => {
@@ -112,7 +120,7 @@ Deno.test("Map - has returns true for existing key", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, true);
+  assertEquals((result as BooleanValue).value, true);
 });
 
 Deno.test("Map - has returns false for missing key", async () => {
@@ -122,7 +130,7 @@ Deno.test("Map - has returns false for missing key", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, false);
+  assertEquals((result as BooleanValue).value, false);
 });
 
 Deno.test("Map - delete removes entry", async () => {
@@ -133,7 +141,7 @@ Deno.test("Map - delete removes entry", async () => {
   `);
 
   assertEquals(result.type, ValueType.BOOLEAN);
-  assertEquals((result as any).value, false);
+  assertEquals((result as BooleanValue).value, false);
 });
 
 Deno.test("Map - delete updates size", async () => {
@@ -144,7 +152,7 @@ Deno.test("Map - delete updates size", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 1);
+  assertEquals((result as NumberValue).value, 1);
 });
 
 Deno.test("Map - original unchanged after delete", async () => {
@@ -155,7 +163,7 @@ Deno.test("Map - original unchanged after delete", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - keys returns array of keys", async () => {
@@ -166,7 +174,7 @@ Deno.test("Map - keys returns array of keys", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - values returns array of values", async () => {
@@ -177,7 +185,7 @@ Deno.test("Map - values returns array of values", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - entries returns array of pairs", async () => {
@@ -188,7 +196,7 @@ Deno.test("Map - entries returns array of pairs", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - entries has correct structure", async () => {
@@ -200,7 +208,7 @@ Deno.test("Map - entries has correct structure", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - works with number keys", async () => {
@@ -212,7 +220,7 @@ Deno.test("Map - works with number keys", async () => {
   `);
 
   assertEquals(result.type, ValueType.STRING);
-  assertEquals((result as any).value, "one");
+  assertEquals((result as StringValue).value, "one");
 });
 
 Deno.test("Map - chaining operations", async () => {
@@ -223,7 +231,7 @@ Deno.test("Map - chaining operations", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 2);
+  assertEquals((result as NumberValue).value, 2);
 });
 
 Deno.test("Map - empty map size is 0", async () => {
@@ -233,7 +241,7 @@ Deno.test("Map - empty map size is 0", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 0);
+  assertEquals((result as NumberValue).value, 0);
 });
 
 Deno.test("Map - get() requires exactly 1 argument", async () => {
@@ -289,7 +297,7 @@ Deno.test("Map - large map performance", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 100);
+  assertEquals((result as NumberValue).value, 100);
 });
 
 Deno.test("Map - lookup in large map", async () => {
@@ -309,5 +317,5 @@ Deno.test("Map - lookup in large map", async () => {
   `);
 
   assertEquals(result.type, ValueType.NUMBER);
-  assertEquals((result as any).value, 100);
+  assertEquals((result as NumberValue).value, 100);
 });

@@ -1,12 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import {
-  BooleanValue,
-  Environment,
-  NumberValue,
-  RuntimeValue,
-  StringValue,
-  ValueType,
-} from "@runtime";
+import { BooleanValue, Environment, NumberValue, StringValue, ValueType } from "@runtime";
 
 // helper to create test values
 function makeNumber(value: number): NumberValue {
@@ -69,7 +62,7 @@ Deno.test("Environment - Child scope inherits from parent", () => {
   assertEquals(get_result.ok, true);
   if (get_result.ok) {
     assertEquals(get_result.value.type, ValueType.NUMBER);
-    assertEquals((get_result.value as any).value, 42);
+    assertEquals((get_result.value as NumberValue).value, 42);
   }
 });
 
@@ -82,11 +75,11 @@ Deno.test("Environment - Child scope can shadow parent variable", () => {
 
   const child_get = child_env.get("x");
   assertEquals(child_get.ok, true);
-  if (child_get.ok) assertEquals((child_get.value as any).value, 100);
+  if (child_get.ok) assertEquals((child_get.value as NumberValue).value, 100);
 
   const parent_get = parent_env.get("x");
   assertEquals(parent_get.ok, true);
-  if (parent_get.ok) assertEquals((parent_get.value as any).value, 42);
+  if (parent_get.ok) assertEquals((parent_get.value as NumberValue).value, 42);
 });
 
 Deno.test("Environment - Extend creates child environment", () => {
@@ -98,11 +91,11 @@ Deno.test("Environment - Extend creates child environment", () => {
 
   const parent_get = child_env.get("parent_var");
   assertEquals(parent_get.ok, true);
-  if (parent_get.ok) assertEquals((parent_get.value as any).value, "parent");
+  if (parent_get.ok) assertEquals((parent_get.value as StringValue).value, "parent");
 
   const child_get = child_env.get("child_var");
   assertEquals(child_get.ok, true);
-  if (child_get.ok) assertEquals((child_get.value as any).value, "child");
+  if (child_get.ok) assertEquals((child_get.value as StringValue).value, "child");
 
   const missing_get = parent_env.get("child_var");
   assertEquals(missing_get.ok, false);
@@ -119,13 +112,13 @@ Deno.test("Environment - Deep nesting works correctly", () => {
   level3_env.define("c", makeNumber(3));
 
   const get_a = level3_env.get("a");
-  assertEquals(get_a.ok && (get_a.value as any).value, 1);
+  assertEquals(get_a.ok && (get_a.value as NumberValue).value, 1);
 
   const get_b = level3_env.get("b");
-  assertEquals(get_b.ok && (get_b.value as any).value, 2);
+  assertEquals(get_b.ok && (get_b.value as NumberValue).value, 2);
 
   const get_c = level3_env.get("c");
-  assertEquals(get_c.ok && (get_c.value as any).value, 3);
+  assertEquals(get_c.ok && (get_c.value as NumberValue).value, 3);
 });
 
 Deno.test("Environment - hasLocal checks only current scope", () => {
@@ -162,19 +155,19 @@ Deno.test("Environment - Multiple children don't interfere", () => {
   child2_env.define("y", makeNumber(2));
 
   const child1_shared = child1_env.get("shared");
-  assertEquals(child1_shared.ok && (child1_shared.value as any).value, 0);
+  assertEquals(child1_shared.ok && (child1_shared.value as NumberValue).value, 0);
 
   const child1_x = child1_env.get("x");
-  assertEquals(child1_x.ok && (child1_x.value as any).value, 1);
+  assertEquals(child1_x.ok && (child1_x.value as NumberValue).value, 1);
 
   const child1_y = child1_env.get("y");
   assertEquals(child1_y.ok, false);
 
   const child2_shared = child2_env.get("shared");
-  assertEquals(child2_shared.ok && (child2_shared.value as any).value, 0);
+  assertEquals(child2_shared.ok && (child2_shared.value as NumberValue).value, 0);
 
   const child2_y = child2_env.get("y");
-  assertEquals(child2_y.ok && (child2_y.value as any).value, 2);
+  assertEquals(child2_y.ok && (child2_y.value as NumberValue).value, 2);
 
   const child2_x = child2_env.get("x");
   assertEquals(child2_x.ok, false);
@@ -189,13 +182,13 @@ Deno.test("Environment - Can store different value types", () => {
   test_env.define("null_val", { type: ValueType.NULL });
 
   const get_num = test_env.get("num");
-  assertEquals(get_num.ok && (get_num.value as any).value, 42);
+  assertEquals(get_num.ok && (get_num.value as NumberValue).value, 42);
 
   const get_str = test_env.get("str");
-  assertEquals(get_str.ok && (get_str.value as any).value, "hello");
+  assertEquals(get_str.ok && (get_str.value as StringValue).value, "hello");
 
   const get_bool = test_env.get("bool");
-  assertEquals(get_bool.ok && (get_bool.value as any).value, true);
+  assertEquals(get_bool.ok && (get_bool.value as BooleanValue).value, true);
 
   const get_null = test_env.get("null_val");
   assertEquals(get_null.ok && get_null.value.type, ValueType.NULL);
@@ -209,11 +202,11 @@ Deno.test("Environment - snake_case variable names", () => {
   test_env.define("is_active", makeBoolean(true));
 
   const get_name = test_env.get("user_name");
-  assertEquals(get_name.ok && (get_name.value as any).value, "rahul");
+  assertEquals(get_name.ok && (get_name.value as StringValue).value, "rahul");
 
   const get_age = test_env.get("user_age");
-  assertEquals(get_age.ok && (get_age.value as any).value, 21);
+  assertEquals(get_age.ok && (get_age.value as NumberValue).value, 21);
 
   const get_active = test_env.get("is_active");
-  assertEquals(get_active.ok && (get_active.value as any).value, true);
+  assertEquals(get_active.ok && (get_active.value as BooleanValue).value, true);
 });

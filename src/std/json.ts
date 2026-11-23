@@ -9,9 +9,14 @@ import type {
   RuntimeValue,
   StringValue,
 } from "../runtime/value.ts";
-import { ValueType } from "../runtime/value.ts";
+import { syncCall, ValueType } from "../runtime/value.ts";
 
-function runtimeValueToJS(value: RuntimeValue): any {
+/* A plain JavaScript value as produced by `JSON.parse` or accepted by `JSON.stringify`. */
+export type JsonValue = null | boolean | number | string | JsonValue[] | {
+  [key: string]: JsonValue;
+};
+
+function runtimeValueToJS(value: RuntimeValue): JsonValue {
   switch (value.type) {
     case ValueType.NUMBER:
       return (value as NumberValue).value;
@@ -24,7 +29,7 @@ function runtimeValueToJS(value: RuntimeValue): any {
     case ValueType.ARRAY:
       return (value as ArrayValue).elements.map(runtimeValueToJS);
     case ValueType.OBJECT: {
-      const obj: Record<string, any> = {};
+      const obj: Record<string, JsonValue> = {};
       const entries = Array.from((value as ObjectValue).properties.entries());
       for (const [key, val] of entries) {
         obj[key] = runtimeValueToJS(val);
@@ -39,7 +44,7 @@ function runtimeValueToJS(value: RuntimeValue): any {
   }
 }
 
-export function jsToRuntimeValue(value: any): RuntimeValue {
+export function jsToRuntimeValue(value: unknown): RuntimeValue {
   if (value === null || value === undefined) {
     return { type: ValueType.NULL } as NullValue;
   }
@@ -77,7 +82,7 @@ export function jsToRuntimeValue(value: any): RuntimeValue {
 export const json_parse: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "parse",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("json.parse() expects exactly 1 argument");
     }
@@ -97,13 +102,13 @@ export const json_parse: NativeFunctionValue = {
       const message = error instanceof Error ? error.message : String(error);
       return runtimeError(`json.parse() failed: ${message}`);
     }
-  },
+  }),
 };
 
 export const json_stringify: NativeFunctionValue = {
   type: ValueType.NATIVE_FUNCTION,
   name: "stringify",
-  call: async (args: RuntimeValue[]): Promise<Result<RuntimeValue>> => {
+  call: syncCall((args: RuntimeValue[]): Result<RuntimeValue> => {
     if (args.length !== 1) {
       return runtimeError("json.stringify() expects exactly 1 argument");
     }
@@ -118,5 +123,5 @@ export const json_stringify: NativeFunctionValue = {
       const message = error instanceof Error ? error.message : String(error);
       return runtimeError(`json.stringify() failed: ${message}`);
     }
-  },
+  }),
 };
